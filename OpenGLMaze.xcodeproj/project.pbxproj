@@ -17,8 +17,8 @@
 		E95AE8931E690FAA00D89929 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = E95AE8911E690FAA00D89929 /* Main.storyboard */; };
 		E95AE8951E690FAA00D89929 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E95AE8941E690FAA00D89929 /* Assets.xcassets */; };
 		E95AE8981E690FAA00D89929 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = E95AE8961E690FAA00D89929 /* LaunchScreen.storyboard */; };
-		E95AE8A31E690FAA00D89929 /* Assignment2Tests.m in Sources */ = {isa = PBXBuildFile; fileRef = E95AE8A21E690FAA00D89929 /* Assignment2Tests.m */; };
-		E95AE8AE1E690FAA00D89929 /* Assignment2UITests.m in Sources */ = {isa = PBXBuildFile; fileRef = E95AE8AD1E690FAA00D89929 /* Assignment2UITests.m */; };
+		E95AE8A31E690FAA00D89929 /* OpenGLMazeTests.m in Sources */ = {isa = PBXBuildFile; fileRef = E95AE8A21E690FAA00D89929 /* OpenGLMazeTests.m */; };
+		E95AE8AE1E690FAA00D89929 /* OpenGLMazeUITests.m in Sources */ = {isa = PBXBuildFile; fileRef = E95AE8AD1E690FAA00D89929 /* OpenGLMazeUITests.m */; };
 		E986DBDA1E6B607A00964F7C /* Texture1.png in Resources */ = {isa = PBXBuildFile; fileRef = E986DBD91E6B607A00964F7C /* Texture1.png */; };
 /* End PBXBuildFile section */
 
@@ -28,14 +28,14 @@
 			containerPortal = E95AE8791E690FAA00D89929 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = E95AE8801E690FAA00D89929;
-			remoteInfo = Assignment2;
+			remoteInfo = OpenGLMaze;
 		};
 		E95AE8AA1E690FAA00D89929 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = E95AE8791E690FAA00D89929 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = E95AE8801E690FAA00D89929;
-			remoteInfo = Assignment2;
+			remoteInfo = OpenGLMaze;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -57,10 +57,10 @@
 		E95AE8971E690FAA00D89929 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		E95AE8991E690FAA00D89929 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		E95AE89E1E690FAA00D89929 /* OpenGLMazeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OpenGLMazeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		E95AE8A21E690FAA00D89929 /* Assignment2Tests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Assignment2Tests.m; sourceTree = "<group>"; };
+		E95AE8A21E690FAA00D89929 /* OpenGLMazeTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = OpenGLMazeTests.m; sourceTree = "<group>"; };
 		E95AE8A41E690FAA00D89929 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		E95AE8A91E690FAA00D89929 /* OpenGLMazeUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OpenGLMazeUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		E95AE8AD1E690FAA00D89929 /* Assignment2UITests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Assignment2UITests.m; sourceTree = "<group>"; };
+		E95AE8AD1E690FAA00D89929 /* OpenGLMazeUITests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = OpenGLMazeUITests.m; sourceTree = "<group>"; };
 		E95AE8AF1E690FAA00D89929 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		E986DBD91E6B607A00964F7C /* Texture1.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Texture1.png; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -130,8 +130,7 @@
 				E95AE8991E690FAA00D89929 /* Info.plist */,
 				E95AE8841E690FAA00D89929 /* Supporting Files */,
 			);
-			name = OpenGLMaze;
-			path = Assignment2;
+			path = OpenGLMaze;
 			sourceTree = "<group>";
 		};
 		E95AE8841E690FAA00D89929 /* Supporting Files */ = {
@@ -145,21 +144,19 @@
 		E95AE8A11E690FAA00D89929 /* OpenGLMazeTests */ = {
 			isa = PBXGroup;
 			children = (
-				E95AE8A21E690FAA00D89929 /* Assignment2Tests.m */,
+				E95AE8A21E690FAA00D89929 /* OpenGLMazeTests.m */,
 				E95AE8A41E690FAA00D89929 /* Info.plist */,
 			);
-			name = OpenGLMazeTests;
-			path = Assignment2Tests;
+			path = OpenGLMazeTests;
 			sourceTree = "<group>";
 		};
 		E95AE8AC1E690FAA00D89929 /* OpenGLMazeUITests */ = {
 			isa = PBXGroup;
 			children = (
-				E95AE8AD1E690FAA00D89929 /* Assignment2UITests.m */,
+				E95AE8AD1E690FAA00D89929 /* OpenGLMazeUITests.m */,
 				E95AE8AF1E690FAA00D89929 /* Info.plist */,
 			);
-			name = OpenGLMazeUITests;
-			path = Assignment2UITests;
+			path = OpenGLMazeUITests;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -178,7 +175,7 @@
 			dependencies = (
 			);
 			name = OpenGLMaze;
-			productName = Assignment2;
+			productName = OpenGLMaze;
 			productReference = E95AE8811E690FAA00D89929 /* OpenGLMaze.app */;
 			productType = "com.apple.product-type.application";
 		};
@@ -196,7 +193,7 @@
 				E95AE8A01E690FAA00D89929 /* PBXTargetDependency */,
 			);
 			name = OpenGLMazeTests;
-			productName = Assignment2Tests;
+			productName = OpenGLMazeTests;
 			productReference = E95AE89E1E690FAA00D89929 /* OpenGLMazeTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
@@ -214,7 +211,7 @@
 				E95AE8AB1E690FAA00D89929 /* PBXTargetDependency */,
 			);
 			name = OpenGLMazeUITests;
-			productName = Assignment2UITests;
+			productName = OpenGLMazeUITests;
 			productReference = E95AE8A91E690FAA00D89929 /* OpenGLMazeUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
@@ -313,7 +310,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E95AE8A31E690FAA00D89929 /* Assignment2Tests.m in Sources */,
+				E95AE8A31E690FAA00D89929 /* OpenGLMazeTests.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -321,7 +318,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E95AE8AE1E690FAA00D89929 /* Assignment2UITests.m in Sources */,
+				E95AE8AE1E690FAA00D89929 /* OpenGLMazeUITests.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -455,7 +452,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				DEVELOPMENT_TEAM = 7RKQS9TN9B;
-				INFOPLIST_FILE = Assignment2/Info.plist;
+				INFOPLIST_FILE = OpenGLMaze/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.cedj.OpenGLMaze;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -467,7 +464,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				DEVELOPMENT_TEAM = 7RKQS9TN9B;
-				INFOPLIST_FILE = Assignment2/Info.plist;
+				INFOPLIST_FILE = OpenGLMaze/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.cedj.OpenGLMaze;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -479,9 +476,9 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				DEVELOPMENT_TEAM = 7RKQS9TN9B;
-				INFOPLIST_FILE = Assignment2Tests/Info.plist;
+				INFOPLIST_FILE = OpenGLMazeTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = com.cedj.Assignment2Tests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.cedj.OpenGLMazeTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/OpenGLMaze.app/OpenGLMaze";
 			};
@@ -492,9 +489,9 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				DEVELOPMENT_TEAM = 7RKQS9TN9B;
-				INFOPLIST_FILE = Assignment2Tests/Info.plist;
+				INFOPLIST_FILE = OpenGLMazeTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = com.cedj.Assignment2Tests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.cedj.OpenGLMazeTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/OpenGLMaze.app/OpenGLMaze";
 			};
@@ -504,11 +501,11 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				DEVELOPMENT_TEAM = 7RKQS9TN9B;
-				INFOPLIST_FILE = Assignment2UITests/Info.plist;
+				INFOPLIST_FILE = OpenGLMazeUITests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = com.cedj.Assignment2UITests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.cedj.OpenGLMazeUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				TEST_TARGET_NAME = Assignment2;
+				TEST_TARGET_NAME = OpenGLMaze;
 			};
 			name = Debug;
 		};
@@ -516,11 +513,11 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				DEVELOPMENT_TEAM = 7RKQS9TN9B;
-				INFOPLIST_FILE = Assignment2UITests/Info.plist;
+				INFOPLIST_FILE = OpenGLMazeUITests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = com.cedj.Assignment2UITests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.cedj.OpenGLMazeUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				TEST_TARGET_NAME = Assignment2;
+				TEST_TARGET_NAME = OpenGLMaze;
 			};
 			name = Release;
 		};

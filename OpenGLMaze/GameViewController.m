@@ -241,9 +241,11 @@ struct MazeCell
     
     // Load in and set texture
     /* use setupTexture to create crate texture */
-    crateTexture = [self setupTexture:@"Texture1.png"];
+    _textures->textureOne = [self setupTexture:@"Texture1.png"];
+    _textures->textureTwo = [self setupTexture:@"Texture2.png"];
+    _textures->textureThree = [self setupTexture:@"Texture3.png"];
+    _textures->textureFour = [self setupTexture:@"Texture4.png"];
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, crateTexture);
     glUniform1i(uniforms[UNIFORM_TEXTURE], 0);
 }
 
@@ -404,29 +406,35 @@ struct MazeCell
     glUniform4fv(uniforms[UNIFORM_AMBIENT_COMPONENT], 1, ambientComponent.v);
     
     // Select VBO and draw
-    //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _indexBuffer);
-    //glDrawElements(GL_TRIANGLES, numIndices, GL_UNSIGNED_INT, 0);
     
     for(MazeTile* mazeTile in _mazeTiles) {
         if (mazeTile->mazeCell.northWallPresent) {
             glUniformMatrix4fv(uniforms[UNIFORM_MODELVIEWPROJECTION_MATRIX], 1, 0, mazeTile->northModelProjectionMatrix.m);
             glUniformMatrix3fv(uniforms[UNIFORM_NORMAL_MATRIX], 1, 0, (mazeTile->northNormalMatrix).m);
-            glDrawArrays(GL_TRIANGLES, 0, 36);
+            glBindTexture(GL_TEXTURE_2D, _textures->textureOne);
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _indexBuffer);
+            glDrawElements(GL_TRIANGLES, numIndices, GL_UNSIGNED_INT, 0);
         }
         if (mazeTile->mazeCell.southWallPresent) {
             glUniformMatrix4fv(uniforms[UNIFORM_MODELVIEWPROJECTION_MATRIX], 1, 0, mazeTile->southModelProjectionMatrix.m);
             glUniformMatrix3fv(uniforms[UNIFORM_NORMAL_MATRIX], 1, 0, (mazeTile->southNormalMatrix).m);
-            glDrawArrays(GL_TRIANGLES, 0, 36);
+            glBindTexture(GL_TEXTURE_2D, _textures->textureTwo);
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _indexBuffer);
+            glDrawElements(GL_TRIANGLES, numIndices, GL_UNSIGNED_INT, 0);
         }
         if (mazeTile->mazeCell.eastWallPresent) {
             glUniformMatrix4fv(uniforms[UNIFORM_MODELVIEWPROJECTION_MATRIX], 1, 0, mazeTile->eastModelProjectionMatrix.m);
             glUniformMatrix3fv(uniforms[UNIFORM_NORMAL_MATRIX], 1, 0, (mazeTile->eastNormalMatrix).m);
-            glDrawArrays(GL_TRIANGLES, 0, 36);
+            glBindTexture(GL_TEXTURE_2D, _textures->textureThree);
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _indexBuffer);
+            glDrawElements(GL_TRIANGLES, numIndices, GL_UNSIGNED_INT, 0);
         }
         if (mazeTile->mazeCell.westWallPresent) {
             glUniformMatrix4fv(uniforms[UNIFORM_MODELVIEWPROJECTION_MATRIX], 1, 0, mazeTile->westModelProjectionMatrix.m);
             glUniformMatrix3fv(uniforms[UNIFORM_NORMAL_MATRIX], 1, 0, (mazeTile->westNormalMatrix).m);
-            glDrawArrays(GL_TRIANGLES, 0, 36);
+            glBindTexture(GL_TEXTURE_2D, _textures->textureFour);
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _indexBuffer);
+            glDrawElements(GL_TRIANGLES, numIndices, GL_UNSIGNED_INT, 0);
         }
     }
 }

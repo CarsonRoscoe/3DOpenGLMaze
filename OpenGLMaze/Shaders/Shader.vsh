@@ -8,14 +8,17 @@
 
 attribute vec4 position;
 attribute vec3 normal;
-/*attribute vec2 textureCoordinate;*/
+//attribute vec2 textureCoordinate;
 
 varying lowp vec4 colorVarying;
 
 uniform mat4 modelViewProjectionMatrix;
 uniform mat3 normalMatrix;
 
-/*varying vec2 textureCoordinateInterpolated;*/
+//attribute vec2 TexCoordIn; // New
+//varying vec2 TexCoordOut; // New
+
+//varying vec2 textureCoordinateInterpolated;
 
 void main()
 {
@@ -28,7 +31,8 @@ void main()
     colorVarying = diffuseColor * nDotVP;
     
     gl_Position = modelViewProjectionMatrix * position;
-    /*textureCoordinateInterpolated = textureCoordinate;*/
+    //TexCoordOut = TexCoordIn; // New
+    //textureCoordinateInterpolated = textureCoordinate;
 }
 
 /*

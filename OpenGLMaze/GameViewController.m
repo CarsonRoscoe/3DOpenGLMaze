@@ -6,6 +6,8 @@
 //  Copyright © 2017 CEDJ. All rights reserved.
 //
 
+
+
 #import "GameViewController.h"
 #import <OpenGLES/ES2/glext.h>
 
@@ -37,36 +39,48 @@ struct MazeCell
     bool westWallPresent;
 };
 
-@interface Textures: NSObject {
-    @public GLuint textureOne;
-    @public GLuint textureTwo;
-    @public GLuint textureThree;
-    @public GLuint textureFour;
+@interface Textures: NSObject {\
+@public GLuint textureOne;
+@public GLuint textureTwo;
+@public GLuint textureThree;
+@public GLuint textureFour;
 } @end
 @implementation Textures @end
 
 // Maze object
 @interface MazeTile : NSObject {
-    @public int column;
-    @public int row;
-    @public GLKMatrix3 northNormalMatrix;
-    @public GLKMatrix3 southNormalMatrix;
-    @public GLKMatrix3 eastNormalMatrix;
-    @public GLKMatrix3 westNormalMatrix;
-    @public GLKMatrix4 northModelProjectionMatrix;
-    @public GLKMatrix4 southModelProjectionMatrix;
-    @public GLKMatrix4 eastModelProjectionMatrix;
-    @public GLKMatrix4 westModelProjectionMatrix;
-    @public struct MazeCell mazeCell;
+@public int column;
+@public int row;
+@public GLKMatrix3 northNormalMatrix;
+@public GLKMatrix3 southNormalMatrix;
+@public GLKMatrix3 eastNormalMatrix;
+@public GLKMatrix3 westNormalMatrix;
+@public GLKMatrix4 northModelProjectionMatrix;
+@public GLKMatrix4 southModelProjectionMatrix;
+@public GLKMatrix4 eastModelProjectionMatrix;
+@public GLKMatrix4 westModelProjectionMatrix;
+@public struct MazeCell mazeCell;
 } @end
 @implementation MazeTile @end
 
 //UV Coordinates go (0,0) to (1,0) where (0,0) is top left and (1,1) is top right
-GLfloat quadTextureCoordinates[8] = {
-    0.0f, 1.0f,
+GLfloat quadTextureCoordinates[36] = {
+    1.0f, 0.0f,
     1.0f, 1.0f,
+    0.0f, 1.0f,
     0.0f, 0.0f,
-    1.0f, 0.0f
+    1.0f, 0.0f,
+    1.0f, 1.0f,
+    0.0f, 1.0f,
+    0.0f, 0.0f,
+    1.0f, 0.0f,
+    1.0f, 1.0f,
+    0.0f, 1.0f,
+    0.0f, 0.0f,
+    1.0f, 0.0f,
+    1.0f, 1.0f,
+    0.0f, 1.0f,
+    0.0f, 0.0f
 };
 
 
@@ -78,8 +92,8 @@ GLfloat gCubeVertexData[216] =
     0.5f, 0.5f, -0.5f,         1.0f, 0.0f, 0.0f,
     0.5f, -0.5f, 0.5f,         1.0f, 0.0f, 0.0f,
     0.5f, -0.5f, 0.5f,         1.0f, 0.0f, 0.0f,
-    0.5f, 0.5f, -0.5f,          1.0f, 0.0f, 0.0f,
-    0.5f, 0.5f, 0.5f,         1.0f, 0.0f, 0.0f,
+    0.5f, 0.5f, -0.5f,         1.0f, 0.0f, 0.0f,
+    0.5f, 0.5f, 0.5f,          1.0f, 0.0f, 0.0f,
     
     0.5f, 0.5f, -0.5f,         0.0f, 1.0f, 0.0f,
     -0.5f, 0.5f, -0.5f,        0.0f, 1.0f, 0.0f,
@@ -140,6 +154,7 @@ GLfloat gCubeVertexData[216] =
 - (BOOL)compileShader:(GLuint *)shader type:(GLenum)type file:(NSString *)file;
 - (BOOL)linkProgram:(GLuint)prog;
 - (BOOL)validateProgram:(GLuint)prog;
+- (GLuint) setupTexture:(NSString *)fileName;
 @end
 
 @implementation GameViewController
@@ -149,7 +164,7 @@ GLfloat gCubeVertexData[216] =
     [super viewDidLoad];
     
     self.context = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2];
-
+    
     if (!self.context) {
         NSLog(@"Failed to create ES context");
     }
@@ -162,7 +177,7 @@ GLfloat gCubeVertexData[216] =
 }
 
 - (void)dealloc
-{    
+{
     [self tearDownGL];
     
     if ([EAGLContext currentContext] == self.context) {
@@ -173,7 +188,7 @@ GLfloat gCubeVertexData[216] =
 - (void)didReceiveMemoryWarning
 {
     [super didReceiveMemoryWarning];
-
+    
     if ([self isViewLoaded] && ([[self view] window] == nil)) {
         self.view = nil;
         
@@ -184,7 +199,7 @@ GLfloat gCubeVertexData[216] =
         }
         self.context = nil;
     }
-
+    
     // Dispose of any resources that can be recreated.
 }
 
@@ -203,20 +218,8 @@ GLfloat gCubeVertexData[216] =
     _mazeTiles = [[NSMutableArray alloc] initWithCapacity:(_mazeWidth * _mazeHeight)];
     //Generate maze
     _textures = [[Textures alloc] init];
-    //Path to image
-    /*NSString *path = [[NSBundle mainBundle] pathForResource:@"Texture1" ofType:@"png"];
     
-    //Set eaglContext
-    [EAGLContext setCurrentContext:[[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2]];
-    
-    //Create texture
-    NSError *theError;
-    GLKTextureInfo *texture = [GLKTextureLoader textureWithContentsOfFile:path options:nil error:&theError];
-    _textures->textureOne = texture.name;*/
-    /* TODO:
-    load textures and store into _textures structure
-     http://stackoverflow.com/questions/3387132/how-to-load-and-display-image-in-opengl-es-for-iphone
-    */
+    //_textures->textureOne = [self setupTexture:@"Texture1.png"];
     
     self.effect = [[GLKBaseEffect alloc] init];
     self.effect.light0.enabled = GL_TRUE;
@@ -237,9 +240,11 @@ GLfloat gCubeVertexData[216] =
     //Normal
     glEnableVertexAttribArray(GLKVertexAttribNormal);
     glVertexAttribPointer(GLKVertexAttribNormal, 3, GL_FLOAT, GL_FALSE, 24, BUFFER_OFFSET(12));
+    
     //Texture data
-    /*glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, quadTextureCoordinates);*/
+    //NSLog(@"%d %d", GLKVertexAttribPosition, GLKVertexAttribNormal);
+    //glEnableVertexAttribArray(2);
+    //glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, quadTextureCoordinates);
     
     glBindVertexArrayOES(0);
 }
@@ -273,10 +278,10 @@ GLfloat gCubeVertexData[216] =
     
     // Compute the model view matrix for the object rendered with ES2
     /*GLKMatrix4 modelViewMatrix = GLKMatrix4MakeTranslation(0.0f, 0.0f, 1.5f);
-    modelViewMatrix = GLKMatrix4Rotate(modelViewMatrix, _rotation, 1.0f, 1.0f, 1.0f);
-    modelViewMatrix = GLKMatrix4Multiply(baseModelViewMatrix, modelViewMatrix);
-    
-    _normalMatrix = GLKMatrix3InvertAndTranspose(GLKMatrix4GetMatrix3(modelViewMatrix), NULL);*/
+     modelViewMatrix = GLKMatrix4Rotate(modelViewMatrix, _rotation, 1.0f, 1.0f, 1.0f);
+     modelViewMatrix = GLKMatrix4Multiply(baseModelViewMatrix, modelViewMatrix);
+     
+     _normalMatrix = GLKMatrix3InvertAndTranspose(GLKMatrix4GetMatrix3(modelViewMatrix), NULL);*/
     
     [_mazeTiles removeAllObjects];
     for(int col = 0; col < _mazeWidth; col++) {
@@ -359,32 +364,32 @@ GLfloat gCubeVertexData[216] =
         if (mazeTile->mazeCell.northWallPresent) {
             glUniformMatrix4fv(uniforms[UNIFORM_MODELVIEWPROJECTION_MATRIX], 1, 0, mazeTile->northModelProjectionMatrix.m);
             glUniformMatrix3fv(uniforms[UNIFORM_NORMAL_MATRIX], 1, 0, (mazeTile->northNormalMatrix).m);
-            /*glUniform1i(glGetUniformLocation(_program, "textureUnit"), 0);
-            glBindTexture(GL_TEXTURE_2D, _textures->textureOne);*/
+            //glUniform1i(glGetUniformLocation(_program, "textureUnit"), 0);
+            //glBindTexture(GL_TEXTURE_2D, _textures->textureOne);
             //set texture to north texture
             glDrawArrays(GL_TRIANGLES, 0, 36);
         }
         if (mazeTile->mazeCell.southWallPresent) {
             glUniformMatrix4fv(uniforms[UNIFORM_MODELVIEWPROJECTION_MATRIX], 1, 0, mazeTile->southModelProjectionMatrix.m);
             glUniformMatrix3fv(uniforms[UNIFORM_NORMAL_MATRIX], 1, 0, (mazeTile->southNormalMatrix).m);
-            /*glUniform1i(glGetUniformLocation(_program, "textureUnit"), 0);
-            glBindTexture(GL_TEXTURE_2D, _textures->textureOne);*/
+            //glUniform1i(glGetUniformLocation(_program, "textureUnit"), 0);
+            //glBindTexture(GL_TEXTURE_2D, _textures->textureOne);
             //set texture to south texture
             glDrawArrays(GL_TRIANGLES, 0, 36);
         }
         if (mazeTile->mazeCell.eastWallPresent) {
             glUniformMatrix4fv(uniforms[UNIFORM_MODELVIEWPROJECTION_MATRIX], 1, 0, mazeTile->eastModelProjectionMatrix.m);
             glUniformMatrix3fv(uniforms[UNIFORM_NORMAL_MATRIX], 1, 0, (mazeTile->eastNormalMatrix).m);
-            /*glUniform1i(glGetUniformLocation(_program, "textureUnit"), 0);
-            glBindTexture(GL_TEXTURE_2D, _textures->textureOne);*/
+            //glUniform1i(glGetUniformLocation(_program, "textureUnit"), 0);
+            //glBindTexture(GL_TEXTURE_2D, _textures->textureOne);
             //set texture to east texture
             glDrawArrays(GL_TRIANGLES, 0, 36);
         }
         if (mazeTile->mazeCell.westWallPresent) {
             glUniformMatrix4fv(uniforms[UNIFORM_MODELVIEWPROJECTION_MATRIX], 1, 0, mazeTile->westModelProjectionMatrix.m);
             glUniformMatrix3fv(uniforms[UNIFORM_NORMAL_MATRIX], 1, 0, (mazeTile->westNormalMatrix).m);
-            /*glUniform1i(glGetUniformLocation(_program, "textureUnit"), 0);
-            glBindTexture(GL_TEXTURE_2D, _textures->textureOne);*/
+            //glUniform1i(glGetUniformLocation(_program, "textureUnit"), 0);
+            //glBindTexture(GL_TEXTURE_2D, _textures->textureOne);
             //set texture to west texture
             glDrawArrays(GL_TRIANGLES, 0, 36);
         }
@@ -461,6 +466,42 @@ GLfloat gCubeVertexData[216] =
     }
     
     return YES;
+}
+
+
+- (GLuint)setupTexture:(NSString *)fileName {
+    // 1
+    CGImageRef spriteImage = [UIImage imageNamed:fileName].CGImage;
+    if (!spriteImage) {
+        NSLog(@"Failed to load image %@", fileName);
+        exit(1);
+    }
+    
+    // 2
+    size_t width = CGImageGetWidth(spriteImage);
+    size_t height = CGImageGetHeight(spriteImage);
+    
+    GLubyte * spriteData = (GLubyte *) calloc(width*height*4, sizeof(GLubyte));
+    
+    CGContextRef spriteContext = CGBitmapContextCreate(spriteData, width, height, 8, width*4,
+                                                       CGImageGetColorSpace(spriteImage), kCGImageAlphaPremultipliedLast);
+    
+    // 3
+    CGContextDrawImage(spriteContext, CGRectMake(0, 0, width, height), spriteImage);
+    
+    CGContextRelease(spriteContext);
+    
+    // 4
+    GLuint texName;
+    glGenTextures(1, &texName);
+    glBindTexture(GL_TEXTURE_2D, texName);
+    
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, spriteData);
+    
+    free(spriteData);
+    return texName;
 }
 
 - (BOOL)compileShader:(GLuint *)shader type:(GLenum)type file:(NSString *)file
@@ -543,3 +584,4 @@ GLfloat gCubeVertexData[216] =
     return YES;
 }
 @end
+

@@ -10,11 +10,15 @@ varying lowp vec4 colorVarying;
 /*varying highp vec2 textureCoordinateInterpolated;
 uniform sampler2D textureUnit;*/
 
+//varying lowp vec2 TexCoordOut; // New
+//uniform sampler2D Texture; // New
+
 
 void main()
 {
     gl_FragColor = colorVarying;
-    /*gl_FragColor = texture2D(textureUnit, textureCoordinateInterpolated);*/
+    //gl_FragColor = texture2D(Texture, TexCoordOut); // New
+    //gl_FragColor = texture2D(textureUnit, textureCoordinateInterpolated);
 }
 
 /*

@@ -20,6 +20,9 @@
 		E95AE8A31E690FAA00D89929 /* OpenGLMazeTests.m in Sources */ = {isa = PBXBuildFile; fileRef = E95AE8A21E690FAA00D89929 /* OpenGLMazeTests.m */; };
 		E95AE8AE1E690FAA00D89929 /* OpenGLMazeUITests.m in Sources */ = {isa = PBXBuildFile; fileRef = E95AE8AD1E690FAA00D89929 /* OpenGLMazeUITests.m */; };
 		E986DBDA1E6B607A00964F7C /* Texture1.png in Resources */ = {isa = PBXBuildFile; fileRef = E986DBD91E6B607A00964F7C /* Texture1.png */; };
+		E99959711E6CC35400DDD4BE /* Texture4.png in Resources */ = {isa = PBXBuildFile; fileRef = E999596E1E6CC35400DDD4BE /* Texture4.png */; };
+		E99959721E6CC35400DDD4BE /* Texture3.png in Resources */ = {isa = PBXBuildFile; fileRef = E999596F1E6CC35400DDD4BE /* Texture3.png */; };
+		E99959731E6CC35400DDD4BE /* Texture2.png in Resources */ = {isa = PBXBuildFile; fileRef = E99959701E6CC35400DDD4BE /* Texture2.png */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -63,6 +66,9 @@
 		E95AE8AD1E690FAA00D89929 /* OpenGLMazeUITests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = OpenGLMazeUITests.m; sourceTree = "<group>"; };
 		E95AE8AF1E690FAA00D89929 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		E986DBD91E6B607A00964F7C /* Texture1.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Texture1.png; sourceTree = "<group>"; };
+		E999596E1E6CC35400DDD4BE /* Texture4.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Texture4.png; sourceTree = "<group>"; };
+		E999596F1E6CC35400DDD4BE /* Texture3.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Texture3.png; sourceTree = "<group>"; };
+		E99959701E6CC35400DDD4BE /* Texture2.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Texture2.png; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -113,6 +119,9 @@
 		E95AE8831E690FAA00D89929 /* OpenGLMaze */ = {
 			isa = PBXGroup;
 			children = (
+				E999596E1E6CC35400DDD4BE /* Texture4.png */,
+				E999596F1E6CC35400DDD4BE /* Texture3.png */,
+				E99959701E6CC35400DDD4BE /* Texture2.png */,
 				E986DBD91E6B607A00964F7C /* Texture1.png */,
 				E908C9711E6A182000EC330A /* DisjointSet.cpp */,
 				E908C9721E6A182000EC330A /* DisjointSet.h */,
@@ -269,10 +278,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				E95AE8931E690FAA00D89929 /* Main.storyboard in Resources */,
+				E99959711E6CC35400DDD4BE /* Texture4.png in Resources */,
 				E95AE88D1E690FAA00D89929 /* Shader.vsh in Resources */,
+				E99959721E6CC35400DDD4BE /* Texture3.png in Resources */,
 				E95AE8951E690FAA00D89929 /* Assets.xcassets in Resources */,
 				E95AE8981E690FAA00D89929 /* LaunchScreen.storyboard in Resources */,
 				E986DBDA1E6B607A00964F7C /* Texture1.png in Resources */,
+				E99959731E6CC35400DDD4BE /* Texture2.png in Resources */,
 				E95AE88B1E690FAA00D89929 /* Shader.fsh in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

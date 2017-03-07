@@ -28,6 +28,10 @@ enum
 };
 GLint uniforms[NUM_UNIFORMS];
 
+typedef enum {
+    NORTH, SOUTH, EAST, WEST
+} Direction;
+
 //Remove later when linked to C++
 struct MazeCell
 {
@@ -42,6 +46,7 @@ struct MazeCell
 @public GLuint textureTwo;
 @public GLuint textureThree;
 @public GLuint textureFour;
+@public GLuint textureFloor;
 } @end
 @implementation Textures @end
 
@@ -86,8 +91,6 @@ struct MazeCell
     // Shape vertices, etc. and textures
     GLfloat *vertices, *normals, *texCoords;
     GLuint numIndices, *indices;
-    /* texture parameters ??? */
-    GLuint crateTexture;
     
     // GLES buffer IDs
     GLuint _vertexArray;
@@ -98,6 +101,16 @@ struct MazeCell
     int _mazeHeight;
     NSMutableArray *_mazeTiles;
     Textures *_textures;
+    bool _dayTime;
+    
+    // Floor
+    GLKMatrix3 _floorNormalMatrix;
+    GLKMatrix4 _floorModelProjectionMatrix;
+    
+    // Movement
+    float _x;
+    float _z;
+    Direction _direction;
 }
 
 @property (strong, nonatomic) EAGLContext *context;
@@ -109,6 +122,11 @@ struct MazeCell
 - (BOOL)compileShader:(GLuint *)shader type:(GLenum)type file:(NSString *)file;
 - (BOOL)linkProgram:(GLuint)prog;
 - (BOOL)validateProgram:(GLuint)prog;
+- (void)setLighting:(bool)isDay;
+- (void)takeStep;
+- (void)turnLeft;
+- (void)turnRight;
+- (void)renderCube:(GLKMatrix4)projection normal:(GLKMatrix3)normal texture:(GLuint)texture;
 
 @end
 
@@ -117,7 +135,8 @@ struct MazeCell
 - (void)viewDidLoad
 {
     [super viewDidLoad];
-    
+    _direction = NORTH;
+    _dayTime = true;
     // Set up iOS gesture recognizers
     UITapGestureRecognizer *singleTap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(doSingleTap:)];
     singleTap.numberOfTapsRequired = 1;
@@ -177,8 +196,8 @@ struct MazeCell
     // Load shaders
     [self loadShaders];
     
-    _mazeWidth = 10;
-    _mazeHeight = 10;
+    _mazeWidth = 1;
+    _mazeHeight = 1;
     _mazeTiles = [[NSMutableArray alloc] initWithCapacity:(_mazeWidth * _mazeHeight)];
     //Generate maze
     _textures = [[Textures alloc] init];
@@ -200,10 +219,7 @@ struct MazeCell
     /* set values, e.g., flashlightPosition = GLKVector3Make(0.0, 0.0, 1.0); */
     flashlightPosition = GLKVector3Make(0.0, 0.0, 1.0);
     diffuseLightPosition = GLKVector3Make(0.0, 1.0, 0.0);
-    diffuseComponent = GLKVector4Make(0.8, 0.1, 0.1, 1.0);
-    shininess = 200.0;
-    specularComponent = GLKVector4Make(1.0, 1.0, 1.0, 1.0);
-    ambientComponent = GLKVector4Make(0.5, 0.5, 0.5, 1.0);
+    [self setLighting:true];
     
     // Initialize GL and get buffers
     glEnable(GL_DEPTH_TEST);
@@ -245,8 +261,23 @@ struct MazeCell
     _textures->textureTwo = [self setupTexture:@"Texture2.png"];
     _textures->textureThree = [self setupTexture:@"Texture3.png"];
     _textures->textureFour = [self setupTexture:@"Texture4.png"];
+    _textures->textureFloor = [self setupTexture:@"Floor.png"];
     glActiveTexture(GL_TEXTURE0);
     glUniform1i(uniforms[UNIFORM_TEXTURE], 0);
+}
+
+- (void)setLighting:(bool)isDay {
+    if (isDay) {
+        diffuseComponent = GLKVector4Make(0.3, 0.2, 0.2, 1.0);
+        shininess = 200.0;
+        specularComponent = GLKVector4Make(1.0, 1.0, 1.0, 1.0);
+        ambientComponent = GLKVector4Make(0.5, 0.4, 0.4, 1.0);
+    } else {
+        diffuseComponent = GLKVector4Make(0.1, 0.1, 0.3, 1.0);
+        shininess = 200.0;
+        specularComponent = GLKVector4Make(1.0, 1.0, 1.0, 1.0);
+        ambientComponent = GLKVector4Make(0.2, 0.2, 0.4, 1.0);
+    }
 }
 
 - (void)tearDownGL
@@ -281,14 +312,16 @@ struct MazeCell
 - (IBAction)doSingleTap:(UITapGestureRecognizer *)recognizer
 {
     dragStart = [recognizer locationInView:self.view];
+    _dayTime = !_dayTime;
 }
 
 - (IBAction)doRotate:(UIPanGestureRecognizer *)recognizer
 {
     if (recognizer.state != UIGestureRecognizerStateEnded) {
         CGPoint newPt = [recognizer locationInView:self.view];
-        yRot = (newPt.x - dragStart.x) * M_PI / 180;
-        xRot = (newPt.y - dragStart.y) * M_PI / 180;
+        _rotation = (newPt.x - dragStart.x) * M_PI / 180;
+        xRot = (newPt.y - dragStart.y);
+        NSLog(@"%f", xRot);
     }
 }
 
@@ -297,24 +330,23 @@ struct MazeCell
 - (void)update
 {
     // Set up base model view matrix (place camera)
-    GLKMatrix4 baseModelViewMatrix = GLKMatrix4MakeTranslation(0.0f, 0.0f, -20.0f);
-    baseModelViewMatrix = GLKMatrix4RotateX(baseModelViewMatrix, 0.4f);
-    
-    // Set up model view matrix (place model in world)
-    _modelViewMatrix = GLKMatrix4Identity;
-    _modelViewMatrix = GLKMatrix4Rotate(_modelViewMatrix, xRot, 1.0f, 0.0f, 0.0f);
-    _modelViewMatrix = GLKMatrix4Rotate(_modelViewMatrix, yRot, 0.0f, 1.0f, 0.0f);
-    _modelViewMatrix = GLKMatrix4Rotate(_modelViewMatrix, _rotation, 0.0f, 1.0f, 0.0f);
-    _modelViewMatrix = GLKMatrix4Multiply(baseModelViewMatrix, _modelViewMatrix);
-    
-    // Calculate normal matrix
-    _normalMatrix = GLKMatrix3InvertAndTranspose(GLKMatrix4GetMatrix3(_modelViewMatrix), NULL);
-    
+    GLKMatrix4 baseModelViewMatrix = GLKMatrix4MakeTranslation(0.0, 0.0f, 0.0);
+    //baseModelViewMatrix = GLKMatrix4RotateY(baseModelViewMatrix, _rotation);
+
     // Calculate projection matrix
     float aspect = fabsf(self.view.bounds.size.width / self.view.bounds.size.height);
     GLKMatrix4 projectionMatrix = GLKMatrix4MakePerspective(GLKMathDegreesToRadians(65.0f), aspect, 0.1f, 100.0f);
     
-    _modelViewProjectionMatrix = GLKMatrix4Multiply(projectionMatrix, _modelViewMatrix);
+    //Floor
+    GLKMatrix4 floorModelViewMatrix = GLKMatrix4MakeTranslation(0.0, 0.0, 0.0);
+    floorModelViewMatrix = GLKMatrix4RotateY(floorModelViewMatrix, _rotation);
+    floorModelViewMatrix = GLKMatrix4Scale(floorModelViewMatrix, _mazeWidth * 2, 1, _mazeHeight * 2);
+    floorModelViewMatrix = GLKMatrix4Translate(floorModelViewMatrix, 0, -1.0, 0);
+    floorModelViewMatrix = GLKMatrix4Multiply(baseModelViewMatrix, floorModelViewMatrix);
+    _floorNormalMatrix = GLKMatrix3InvertAndTranspose(GLKMatrix4GetMatrix3(floorModelViewMatrix), NULL);
+    _floorModelProjectionMatrix = GLKMatrix4Multiply(projectionMatrix, floorModelViewMatrix);
+    
+    //_modelViewProjectionMatrix = GLKMatrix4Multiply(projectionMatrix, _modelViewMatrix);
     
     [_mazeTiles removeAllObjects];
     for(int col = 0; col < _mazeWidth; col++) {
@@ -336,22 +368,26 @@ struct MazeCell
             MazeTile *mazeTile = [[MazeTile alloc] init];
             mazeTile->column = col;
             mazeTile->row = row;
-            float widthOffset = -_mazeWidth / 2.0f;
             
             if (mazeCell.northWallPresent) {
-                GLKMatrix4 modelViewMatrix = GLKMatrix4MakeTranslation(col + widthOffset, 1.0, row + 0.4f);
-                modelViewMatrix = GLKMatrix4Scale(modelViewMatrix, 1, 0.2f, 1);
-                modelViewMatrix = GLKMatrix4Multiply(baseModelViewMatrix, modelViewMatrix);
-                northNormalMatrix = GLKMatrix3InvertAndTranspose(GLKMatrix4GetMatrix3(modelViewMatrix), NULL);
+                GLKMatrix4 modelViewMatrix = GLKMatrix4Identity;
+                modelViewMatrix = GLKMatrix4RotateY(modelViewMatrix, _rotation);
+                modelViewMatrix = GLKMatrix4Scale(modelViewMatrix, 1, 1, 0.1f);
+                modelViewMatrix = GLKMatrix4Translate(modelViewMatrix, col, 0.0, row * 10 + 4.0f);
                 
+                modelViewMatrix = GLKMatrix4Multiply(baseModelViewMatrix, modelViewMatrix);
+                
+                northNormalMatrix = GLKMatrix3InvertAndTranspose(GLKMatrix4GetMatrix3(modelViewMatrix), NULL);
                 northProjectionMatrix = GLKMatrix4Multiply(projectionMatrix, modelViewMatrix);
                 
                 mazeTile->northNormalMatrix = northNormalMatrix;
                 mazeTile->northModelProjectionMatrix = northProjectionMatrix;
             }
             if (mazeCell.southWallPresent) {
-                GLKMatrix4 modelViewMatrix = GLKMatrix4MakeTranslation(col + widthOffset, 1.0, row + 0.4f);
-                modelViewMatrix = GLKMatrix4Scale(modelViewMatrix, 1, 0.2f, 1);
+                GLKMatrix4 modelViewMatrix = GLKMatrix4Identity;
+                modelViewMatrix = GLKMatrix4RotateY(modelViewMatrix, _rotation);
+                modelViewMatrix = GLKMatrix4Scale(modelViewMatrix, 1, 1, 0.1f);
+                modelViewMatrix = GLKMatrix4Translate(modelViewMatrix, col, 0.0, row * 10 - 4.0f);
                 modelViewMatrix = GLKMatrix4Multiply(baseModelViewMatrix, modelViewMatrix);
                 southNormalMatrix = GLKMatrix3InvertAndTranspose(GLKMatrix4GetMatrix3(modelViewMatrix), NULL);
                 southProjectionMatrix = GLKMatrix4Multiply(projectionMatrix, modelViewMatrix);
@@ -359,8 +395,10 @@ struct MazeCell
                 mazeTile->southModelProjectionMatrix = southProjectionMatrix;
             }
             if (mazeCell.eastWallPresent) {
-                GLKMatrix4 modelViewMatrix = GLKMatrix4MakeTranslation(col + 0.4f + widthOffset, 1.0, row);
-                modelViewMatrix = GLKMatrix4Scale(modelViewMatrix, 0.2f, 1, 1);
+                GLKMatrix4 modelViewMatrix = GLKMatrix4Identity;
+                modelViewMatrix = GLKMatrix4RotateY(modelViewMatrix, _rotation);
+                modelViewMatrix = GLKMatrix4Scale(modelViewMatrix, 0.1f, 1, 1);
+                modelViewMatrix = GLKMatrix4Translate(modelViewMatrix, col * 10 + 4.0f, 0.0, row);
                 modelViewMatrix = GLKMatrix4Multiply(baseModelViewMatrix, modelViewMatrix);
                 eastNormalMatrix = GLKMatrix3InvertAndTranspose(GLKMatrix4GetMatrix3(modelViewMatrix), NULL);
                 eastProjectionMatrix = GLKMatrix4Multiply(projectionMatrix, modelViewMatrix);
@@ -368,8 +406,10 @@ struct MazeCell
                 mazeTile->eastModelProjectionMatrix = eastProjectionMatrix;
             }
             if (mazeCell.westWallPresent) {
-                GLKMatrix4 modelViewMatrix = GLKMatrix4MakeTranslation(col - 0.4f + widthOffset, 1.0, row);
-                modelViewMatrix = GLKMatrix4Scale(modelViewMatrix, 0.2f, 1, 1);
+                GLKMatrix4 modelViewMatrix = GLKMatrix4Identity;
+                modelViewMatrix = GLKMatrix4RotateY(modelViewMatrix, _rotation);
+                modelViewMatrix = GLKMatrix4Scale(modelViewMatrix, 0.1f, 1, 1);
+                modelViewMatrix = GLKMatrix4Translate(modelViewMatrix, col * 10 - 4.0f, 0.0, row);
                 modelViewMatrix = GLKMatrix4Multiply(baseModelViewMatrix, modelViewMatrix);
                 westNormalMatrix = GLKMatrix3InvertAndTranspose(GLKMatrix4GetMatrix3(modelViewMatrix), NULL);
                 westProjectionMatrix = GLKMatrix4Multiply(projectionMatrix, modelViewMatrix);
@@ -405,38 +445,63 @@ struct MazeCell
     glUniform4fv(uniforms[UNIFORM_SPECULAR_COMPONENT], 1, specularComponent.v);
     glUniform4fv(uniforms[UNIFORM_AMBIENT_COMPONENT], 1, ambientComponent.v);
     
-    // Select VBO and draw
+    [self setLighting:_dayTime];
     
+    // Floor
+    [self renderCube:_floorModelProjectionMatrix normal:_floorNormalMatrix texture:_textures->textureFloor];
+    
+    // Maze tiles
     for(MazeTile* mazeTile in _mazeTiles) {
         if (mazeTile->mazeCell.northWallPresent) {
-            glUniformMatrix4fv(uniforms[UNIFORM_MODELVIEWPROJECTION_MATRIX], 1, 0, mazeTile->northModelProjectionMatrix.m);
-            glUniformMatrix3fv(uniforms[UNIFORM_NORMAL_MATRIX], 1, 0, (mazeTile->northNormalMatrix).m);
-            glBindTexture(GL_TEXTURE_2D, _textures->textureOne);
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _indexBuffer);
-            glDrawElements(GL_TRIANGLES, numIndices, GL_UNSIGNED_INT, 0);
+            [self renderCube:mazeTile->northModelProjectionMatrix normal:mazeTile->northNormalMatrix texture:_textures->textureOne];
         }
         if (mazeTile->mazeCell.southWallPresent) {
-            glUniformMatrix4fv(uniforms[UNIFORM_MODELVIEWPROJECTION_MATRIX], 1, 0, mazeTile->southModelProjectionMatrix.m);
-            glUniformMatrix3fv(uniforms[UNIFORM_NORMAL_MATRIX], 1, 0, (mazeTile->southNormalMatrix).m);
-            glBindTexture(GL_TEXTURE_2D, _textures->textureTwo);
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _indexBuffer);
-            glDrawElements(GL_TRIANGLES, numIndices, GL_UNSIGNED_INT, 0);
+            [self renderCube:mazeTile->southModelProjectionMatrix normal:mazeTile->southNormalMatrix texture:_textures->textureTwo];
         }
         if (mazeTile->mazeCell.eastWallPresent) {
-            glUniformMatrix4fv(uniforms[UNIFORM_MODELVIEWPROJECTION_MATRIX], 1, 0, mazeTile->eastModelProjectionMatrix.m);
-            glUniformMatrix3fv(uniforms[UNIFORM_NORMAL_MATRIX], 1, 0, (mazeTile->eastNormalMatrix).m);
-            glBindTexture(GL_TEXTURE_2D, _textures->textureThree);
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _indexBuffer);
-            glDrawElements(GL_TRIANGLES, numIndices, GL_UNSIGNED_INT, 0);
+            [self renderCube:mazeTile->eastModelProjectionMatrix normal:mazeTile->eastNormalMatrix texture:_textures->textureThree];
         }
         if (mazeTile->mazeCell.westWallPresent) {
-            glUniformMatrix4fv(uniforms[UNIFORM_MODELVIEWPROJECTION_MATRIX], 1, 0, mazeTile->westModelProjectionMatrix.m);
-            glUniformMatrix3fv(uniforms[UNIFORM_NORMAL_MATRIX], 1, 0, (mazeTile->westNormalMatrix).m);
-            glBindTexture(GL_TEXTURE_2D, _textures->textureFour);
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _indexBuffer);
-            glDrawElements(GL_TRIANGLES, numIndices, GL_UNSIGNED_INT, 0);
+            [self renderCube:mazeTile->westModelProjectionMatrix normal:mazeTile->westNormalMatrix texture:_textures->textureFour];
         }
     }
+    
+    [self takeStep];
+}
+
+- (void)renderCube:(GLKMatrix4)projection normal:(GLKMatrix3)normal texture:(GLuint)texture {
+    glUniformMatrix4fv(uniforms[UNIFORM_MODELVIEWPROJECTION_MATRIX], 1, 0, projection.m);
+    glUniformMatrix3fv(uniforms[UNIFORM_NORMAL_MATRIX], 1, 0, normal.m);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _indexBuffer);
+    glDrawElements(GL_TRIANGLES, numIndices, GL_UNSIGNED_INT, 0);
+}
+
+- (void)takeStep {
+    switch (_direction) {
+        case NORTH:
+            _z += 1.0;
+            break;
+        case SOUTH:
+            _z -= 1.0;
+            break;
+        case EAST:
+            _x -= 1.0;
+            break;
+        case WEST:
+            _x += 1.0;
+            break;
+        default:
+            break;
+    }
+}
+
+- (void)rotateLeft {
+    
+}
+
+- (void)rotateRight {
+    
 }
 
 #pragma mark -  OpenGL ES 2 shader compilation

@@ -23,6 +23,7 @@
 		E99959711E6CC35400DDD4BE /* Texture4.png in Resources */ = {isa = PBXBuildFile; fileRef = E999596E1E6CC35400DDD4BE /* Texture4.png */; };
 		E99959721E6CC35400DDD4BE /* Texture3.png in Resources */ = {isa = PBXBuildFile; fileRef = E999596F1E6CC35400DDD4BE /* Texture3.png */; };
 		E99959731E6CC35400DDD4BE /* Texture2.png in Resources */ = {isa = PBXBuildFile; fileRef = E99959701E6CC35400DDD4BE /* Texture2.png */; };
+		E99959751E6D465800DDD4BE /* Floor.png in Resources */ = {isa = PBXBuildFile; fileRef = E99959741E6D465800DDD4BE /* Floor.png */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -69,6 +70,7 @@
 		E999596E1E6CC35400DDD4BE /* Texture4.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Texture4.png; sourceTree = "<group>"; };
 		E999596F1E6CC35400DDD4BE /* Texture3.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Texture3.png; sourceTree = "<group>"; };
 		E99959701E6CC35400DDD4BE /* Texture2.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Texture2.png; sourceTree = "<group>"; };
+		E99959741E6D465800DDD4BE /* Floor.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Floor.png; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -119,6 +121,7 @@
 		E95AE8831E690FAA00D89929 /* OpenGLMaze */ = {
 			isa = PBXGroup;
 			children = (
+				E99959741E6D465800DDD4BE /* Floor.png */,
 				E999596E1E6CC35400DDD4BE /* Texture4.png */,
 				E999596F1E6CC35400DDD4BE /* Texture3.png */,
 				E99959701E6CC35400DDD4BE /* Texture2.png */,
@@ -277,6 +280,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E99959751E6D465800DDD4BE /* Floor.png in Resources */,
 				E95AE8931E690FAA00D89929 /* Main.storyboard in Resources */,
 				E99959711E6CC35400DDD4BE /* Texture4.png in Resources */,
 				E95AE88D1E690FAA00D89929 /* Shader.vsh in Resources */,

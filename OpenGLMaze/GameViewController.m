@@ -127,6 +127,7 @@ struct MazeCell
 - (void)turnLeft;
 - (void)turnRight;
 - (void)renderCube:(GLKMatrix4)projection normal:(GLKMatrix3)normal texture:(GLuint)texture;
+- (GLKMatrix4)generateModelViewMatrix:(float)xPos zPos:(float)zPos xScale:(float)xScale zScale:(float)zScale;
 
 @end
 
@@ -320,8 +321,6 @@ struct MazeCell
     if (recognizer.state != UIGestureRecognizerStateEnded) {
         CGPoint newPt = [recognizer locationInView:self.view];
         _rotation = (newPt.x - dragStart.x) * M_PI / 180;
-        xRot = (newPt.y - dragStart.y);
-        NSLog(@"%f", xRot);
     }
 }
 
@@ -370,24 +369,15 @@ struct MazeCell
             mazeTile->row = row;
             
             if (mazeCell.northWallPresent) {
-                GLKMatrix4 modelViewMatrix = GLKMatrix4Identity;
-                modelViewMatrix = GLKMatrix4RotateY(modelViewMatrix, _rotation);
-                modelViewMatrix = GLKMatrix4Scale(modelViewMatrix, 1, 1, 0.1f);
-                modelViewMatrix = GLKMatrix4Translate(modelViewMatrix, col, 0.0, row * 10 + 4.0f);
-                
+                GLKMatrix4 modelViewMatrix = [self generateModelViewMatrix:col zPos:(row * 10 + 4.0f) xScale:1 zScale:0.1f];
                 modelViewMatrix = GLKMatrix4Multiply(baseModelViewMatrix, modelViewMatrix);
-                
                 northNormalMatrix = GLKMatrix3InvertAndTranspose(GLKMatrix4GetMatrix3(modelViewMatrix), NULL);
                 northProjectionMatrix = GLKMatrix4Multiply(projectionMatrix, modelViewMatrix);
-                
                 mazeTile->northNormalMatrix = northNormalMatrix;
                 mazeTile->northModelProjectionMatrix = northProjectionMatrix;
             }
             if (mazeCell.southWallPresent) {
-                GLKMatrix4 modelViewMatrix = GLKMatrix4Identity;
-                modelViewMatrix = GLKMatrix4RotateY(modelViewMatrix, _rotation);
-                modelViewMatrix = GLKMatrix4Scale(modelViewMatrix, 1, 1, 0.1f);
-                modelViewMatrix = GLKMatrix4Translate(modelViewMatrix, col, 0.0, row * 10 - 4.0f);
+                GLKMatrix4 modelViewMatrix = [self generateModelViewMatrix:col zPos:(row * 10 - 4.0f) xScale:1 zScale:0.1f];
                 modelViewMatrix = GLKMatrix4Multiply(baseModelViewMatrix, modelViewMatrix);
                 southNormalMatrix = GLKMatrix3InvertAndTranspose(GLKMatrix4GetMatrix3(modelViewMatrix), NULL);
                 southProjectionMatrix = GLKMatrix4Multiply(projectionMatrix, modelViewMatrix);
@@ -395,10 +385,7 @@ struct MazeCell
                 mazeTile->southModelProjectionMatrix = southProjectionMatrix;
             }
             if (mazeCell.eastWallPresent) {
-                GLKMatrix4 modelViewMatrix = GLKMatrix4Identity;
-                modelViewMatrix = GLKMatrix4RotateY(modelViewMatrix, _rotation);
-                modelViewMatrix = GLKMatrix4Scale(modelViewMatrix, 0.1f, 1, 1);
-                modelViewMatrix = GLKMatrix4Translate(modelViewMatrix, col * 10 + 4.0f, 0.0, row);
+                GLKMatrix4 modelViewMatrix = [self generateModelViewMatrix:(col * 10 + 4.0f) zPos:row xScale:0.1f zScale:1.0];
                 modelViewMatrix = GLKMatrix4Multiply(baseModelViewMatrix, modelViewMatrix);
                 eastNormalMatrix = GLKMatrix3InvertAndTranspose(GLKMatrix4GetMatrix3(modelViewMatrix), NULL);
                 eastProjectionMatrix = GLKMatrix4Multiply(projectionMatrix, modelViewMatrix);
@@ -406,10 +393,7 @@ struct MazeCell
                 mazeTile->eastModelProjectionMatrix = eastProjectionMatrix;
             }
             if (mazeCell.westWallPresent) {
-                GLKMatrix4 modelViewMatrix = GLKMatrix4Identity;
-                modelViewMatrix = GLKMatrix4RotateY(modelViewMatrix, _rotation);
-                modelViewMatrix = GLKMatrix4Scale(modelViewMatrix, 0.1f, 1, 1);
-                modelViewMatrix = GLKMatrix4Translate(modelViewMatrix, col * 10 - 4.0f, 0.0, row);
+                GLKMatrix4 modelViewMatrix = [self generateModelViewMatrix:(col * 10 - 4.0f) zPos:row xScale:0.1f zScale:1.0];
                 modelViewMatrix = GLKMatrix4Multiply(baseModelViewMatrix, modelViewMatrix);
                 westNormalMatrix = GLKMatrix3InvertAndTranspose(GLKMatrix4GetMatrix3(modelViewMatrix), NULL);
                 westProjectionMatrix = GLKMatrix4Multiply(projectionMatrix, modelViewMatrix);
@@ -421,6 +405,14 @@ struct MazeCell
             [_mazeTiles addObject:mazeTile];
         }
     }
+}
+
+- (GLKMatrix4)generateModelViewMatrix:(float)xPos zPos:(float)zPos xScale:(float)xScale zScale:(float)zScale
+{
+    GLKMatrix4 modelViewMatrix = GLKMatrix4Identity;
+    modelViewMatrix = GLKMatrix4RotateY(modelViewMatrix, _rotation);
+    modelViewMatrix = GLKMatrix4Scale(modelViewMatrix, xScale, 1, zScale);
+    return GLKMatrix4Translate(modelViewMatrix, xPos, 0.0, zPos);
 }
 
 - (void)glkView:(GLKView *)view drawInRect:(CGRect)rect

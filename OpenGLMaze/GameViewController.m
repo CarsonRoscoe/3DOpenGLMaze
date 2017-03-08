@@ -108,9 +108,13 @@ struct MazeCell
     GLKMatrix4 _floorModelProjectionMatrix;
     
     // Movement
+    float _xToBe;
+    float _zToBe;
     float _x;
     float _z;
     Direction _direction;
+    float _rotationToBe;
+    bool _canMove;
 }
 
 @property (strong, nonatomic) EAGLContext *context;
@@ -123,11 +127,13 @@ struct MazeCell
 - (BOOL)linkProgram:(GLuint)prog;
 - (BOOL)validateProgram:(GLuint)prog;
 - (void)setLighting:(bool)isDay;
-- (void)takeStep;
+- (void)takeStepForward;
+- (void)takeStepBackward;
 - (void)turnLeft;
 - (void)turnRight;
 - (void)renderCube:(GLKMatrix4)projection normal:(GLKMatrix3)normal texture:(GLuint)texture;
 - (GLKMatrix4)generateModelViewMatrix:(float)xPos zPos:(float)zPos xScale:(float)xScale zScale:(float)zScale;
+- (void)updateMovement;
 
 @end
 
@@ -138,6 +144,8 @@ struct MazeCell
     [super viewDidLoad];
     _direction = NORTH;
     _dayTime = true;
+    _rotationToBe = _rotation;
+    _canMove = true;
     // Set up iOS gesture recognizers
     UITapGestureRecognizer *singleTap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(doSingleTap:)];
     singleTap.numberOfTapsRequired = 1;
@@ -318,9 +326,31 @@ struct MazeCell
 
 - (IBAction)doRotate:(UIPanGestureRecognizer *)recognizer
 {
+    if (recognizer.state == UIGestureRecognizerStateBegan ) {
+        dragStart = [recognizer locationInView:self.view];
+    }
     if (recognizer.state != UIGestureRecognizerStateEnded) {
         CGPoint newPt = [recognizer locationInView:self.view];
-        _rotation = (newPt.x - dragStart.x) * M_PI / 180;
+        float yDrag = newPt.y - dragStart.y;
+        float xDrag = newPt.x - dragStart.x;
+        if (_canMove) {
+            if (xDrag > 30) {
+                [self rotateRight];
+                dragStart = [recognizer locationInView:self.view];
+            }
+            if (xDrag < -30) {
+                [self rotateLeft];
+                dragStart = [recognizer locationInView:self.view];
+            }
+            if (yDrag > 30) {
+                [self takeStepBackward];
+                dragStart = [recognizer locationInView:self.view];
+            }
+            if (yDrag < -30) {
+                [self takeStepForward];
+                dragStart = [recognizer locationInView:self.view];
+            }
+        }
     }
 }
 
@@ -336,11 +366,13 @@ struct MazeCell
     float aspect = fabsf(self.view.bounds.size.width / self.view.bounds.size.height);
     GLKMatrix4 projectionMatrix = GLKMatrix4MakePerspective(GLKMathDegreesToRadians(65.0f), aspect, 0.1f, 100.0f);
     
+    NSLog(@"At(%f %f) Moveing To(%f %f) Facing(%f) Rotating To (%f)", _x, _z, _xToBe, _zToBe, _rotation, _rotationToBe);
+    
     //Floor
     GLKMatrix4 floorModelViewMatrix = GLKMatrix4MakeTranslation(0.0, 0.0, 0.0);
     floorModelViewMatrix = GLKMatrix4RotateY(floorModelViewMatrix, _rotation);
     floorModelViewMatrix = GLKMatrix4Scale(floorModelViewMatrix, _mazeWidth * 2, 1, _mazeHeight * 2);
-    floorModelViewMatrix = GLKMatrix4Translate(floorModelViewMatrix, 0, -1.0, 0);
+    floorModelViewMatrix = GLKMatrix4Translate(floorModelViewMatrix, _x / 2.0, -1.0, _z / 2.0);
     floorModelViewMatrix = GLKMatrix4Multiply(baseModelViewMatrix, floorModelViewMatrix);
     _floorNormalMatrix = GLKMatrix3InvertAndTranspose(GLKMatrix4GetMatrix3(floorModelViewMatrix), NULL);
     _floorModelProjectionMatrix = GLKMatrix4Multiply(projectionMatrix, floorModelViewMatrix);
@@ -405,6 +437,7 @@ struct MazeCell
             [_mazeTiles addObject:mazeTile];
         }
     }
+    [self updateMovement];
 }
 
 - (GLKMatrix4)generateModelViewMatrix:(float)xPos zPos:(float)zPos xScale:(float)xScale zScale:(float)zScale
@@ -412,16 +445,13 @@ struct MazeCell
     GLKMatrix4 modelViewMatrix = GLKMatrix4Identity;
     modelViewMatrix = GLKMatrix4RotateY(modelViewMatrix, _rotation);
     modelViewMatrix = GLKMatrix4Scale(modelViewMatrix, xScale, 1, zScale);
-    return GLKMatrix4Translate(modelViewMatrix, xPos, 0.0, zPos);
+    return GLKMatrix4Translate(modelViewMatrix, xPos + (_x * (1/xScale)), 0.0, zPos + (_z * (1/zScale)));
 }
 
 - (void)glkView:(GLKView *)view drawInRect:(CGRect)rect
 {
-    // Clear window
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    
-    // Select VAO and shaders
     glBindVertexArrayOES(_vertexArray);
     glUseProgram(_program);
     
@@ -458,7 +488,6 @@ struct MazeCell
         }
     }
     
-    [self takeStep];
 }
 
 - (void)renderCube:(GLKMatrix4)projection normal:(GLKMatrix3)normal texture:(GLuint)texture {
@@ -469,19 +498,71 @@ struct MazeCell
     glDrawElements(GL_TRIANGLES, numIndices, GL_UNSIGNED_INT, 0);
 }
 
-- (void)takeStep {
+- (void)updateMovement {
+    float moveSpeed = 0.05;
+    float rotationSpeed = (M_PI / 2 / 20);
+    if (_z < _zToBe) {
+        _z += moveSpeed;
+    } else if (_z > _zToBe) {
+        _z -= moveSpeed;
+    } else {
+        _canMove = true;
+        _z = _zToBe;
+    }
+    if (_x < _xToBe) {
+        _x += moveSpeed;
+    } else if (_x > _xToBe) {
+        _x -= moveSpeed;
+    } else {
+        _canMove = true;
+        _x = _xToBe;
+    }
+    if (fabsf(_rotation - _rotationToBe) < 0.3) {
+        _rotation = _rotationToBe;
+        _canMove = true;
+    } else {
+        if (_rotation < _rotationToBe) {
+            _rotation += rotationSpeed;
+        } else if (_rotationToBe > _rotationToBe) {
+            _rotationToBe -= rotationSpeed;
+        }
+    }
+}
+
+- (void)takeStepForward {
+    _canMove = false;
     switch (_direction) {
         case NORTH:
-            _z += 1.0;
+            _zToBe = _z + 0.5;
             break;
         case SOUTH:
-            _z -= 1.0;
+            _zToBe = _z - 0.5;
             break;
         case EAST:
-            _x -= 1.0;
+            _xToBe = _x - 0.5;
             break;
         case WEST:
-            _x += 1.0;
+            _xToBe = _x + 0.5;
+            break;
+        default:
+            break;
+    }
+}
+
+- (void)takeStepBackward {
+    _canMove = false;
+    switch (_direction) {
+        case NORTH:
+            _zToBe = _z - 0.5;
+            break;
+        case SOUTH:
+            _zToBe = _z + 0.5;
+            break;
+        case EAST:
+            _xToBe = _x + 0.5;
+            break;
+        case WEST:
+            _xToBe = _x - 0.5;
             break;
         default:
             break;
@@ -489,11 +570,13 @@ struct MazeCell
 }
 
 - (void)rotateLeft {
-    
+    _canMove = false;
+    _rotationToBe = _rotation - (M_PI / 2);
 }
 
 - (void)rotateRight {
-    
+    _canMove = false;
+    _rotationToBe = _rotation + (M_PI / 2);
 }
 
 #pragma mark -  OpenGL ES 2 shader compilation

@@ -32,6 +32,7 @@ enum
     UNIFORM_AMBIENT_COMPONENT,
     UNIFORM_DIFFUSE_COMPONENT,
     UNIFORM_SPECULAR_COMPONENT,
+    UNIFORM_SCREENSIZE_COMPONENT,
     NUM_UNIFORMS
 };
 GLint uniforms[NUM_UNIFORMS];
@@ -51,6 +52,7 @@ typedef enum {
     GLuint texturePlayer;
     GLuint textureMiniMap;
     GLuint textureCrate;
+    GLuint textureBackground;
 } @end
 @implementation Textures @end
 
@@ -70,6 +72,7 @@ typedef enum {
     float shininess;
     GLKVector4 specularComponent;
     GLKVector4 ambientComponent;
+    GLKVector2 screenSizeComponent;
     
     // Transformation parameters
     float _rotation;
@@ -116,6 +119,18 @@ typedef enum {
     GLKMatrix4 _rotateCubeModelProjectionMatrix;
     GLKMatrix3 _rotateMapCubeNormalMatrix;
     GLKMatrix4 _rotateMapCubeModelProjectionMatrix;
+    
+    // Minimap Background
+    GLKMatrix3 _mapBackgroundNormal;
+    GLKMatrix4 _mapBackgroundProjection;
+    
+    //UI
+    __weak IBOutlet UISwitch *toggleDayNight;
+    __weak IBOutlet UILabel *labelDayNight;
+    __weak IBOutlet UILabel *labelConsoleInfo;
+    __weak IBOutlet UILabel *labelFlashlight;
+    __weak IBOutlet UISwitch *toggleFlashlight;
+    
 }
 
 @property (strong, nonatomic) EAGLContext *context;
@@ -132,25 +147,27 @@ typedef enum {
 - (IBAction)swipeRight:(id)sender;
 - (IBAction)swipeLeft:(id)sender;
 - (IBAction)swipeUp:(id)sender;
+- (IBAction)doubleTap:(id)sender;
 - (IBAction)swipeDown:(id)sender;
+@property (strong, nonatomic) IBOutlet UITapGestureRecognizer *doubleTap;
 - (void)renderCube:(GLKMatrix4)projection normal:(GLKMatrix3)normal texture:(GLuint)texture;
 - (GLKMatrix4)generateModelViewMatrix:(float)xPos zPos:(float)zPos xScale:(float)xScale zScale:(float)zScale isTopDown:(bool)isTopDown;
 - (void)updateMovement;
 - (int)getWallCount:(MazeTile*)MazeTile direction:(Direction)direction;
 - (GLuint) getTexture:(int)adjacentWallCount;
+- (IBAction)doubleTapResetMaze:(id)sender;
 
 
 @end
 
 @implementation GameViewController
-
 - (void)viewDidLoad
 {
     [super viewDidLoad];
     _mazeManager = [[MazeManager alloc] init];
     [_mazeManager createMaze];
     _direction = NORTH;
-    _rotation = 0;
+    _rotation = 180;
     _z = 1;
     _x = 0;
     _rotateCubeX = 0;
@@ -159,7 +176,11 @@ typedef enum {
     _zToBe = _z;
     _rotationToBe = _rotation;
     _canMove = true;
-    _consoleOn = true;
+    _consoleOn = false;
+    labelDayNight.alpha = 1.0;
+    toggleDayNight.alpha = 1.0;
+    toggleDayNight.enabled = true;
+    labelConsoleInfo.alpha = 0.0;
     // Set up iOS gesture recognizers
     UITapGestureRecognizer *singleTap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(doSingleTap:)];
     singleTap.numberOfTapsRequired = 1;
@@ -175,7 +196,6 @@ typedef enum {
     view.context = self.context;
     view.drawableDepthFormat = GLKViewDrawableDepthFormat24;
 
-    
     // Set up GL
     [self setupGL];
 }
@@ -228,6 +248,7 @@ typedef enum {
     uniforms[UNIFORM_DIFFUSE_LIGHT_POSITION] = glGetUniformLocation(_program, "diffuseLightPosition");
     uniforms[UNIFORM_SHININESS] = glGetUniformLocation(_program, "shininess");
     uniforms[UNIFORM_AMBIENT_COMPONENT] = glGetUniformLocation(_program, "ambientComponent");
+    uniforms[UNIFORM_SCREENSIZE_COMPONENT] = glGetUniformLocation(_program, "screenSizeComponent");
     uniforms[UNIFORM_DIFFUSE_COMPONENT] = glGetUniformLocation(_program, "diffuseComponent");
     uniforms[UNIFORM_SPECULAR_COMPONENT] = glGetUniformLocation(_program, "specularComponent");
     
@@ -269,6 +290,7 @@ typedef enum {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _indexBuffer);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(int)*numIndices, indices, GL_STATIC_DRAW);
     
+    
     glBindVertexArrayOES(0);
     
     // Load in and set texture
@@ -281,6 +303,7 @@ typedef enum {
     _textures->texturePlayer = [self setupTexture:@"Player.png"];
     _textures->textureMiniMap = [self setupTexture:@"MinimapWall.png"];
     _textures->textureCrate = [self setupTexture:@"crate.jpg"];
+    _textures->textureBackground = [self setupTexture:@"Background.png"];
     glActiveTexture(GL_TEXTURE0);
     glUniform1i(uniforms[UNIFORM_TEXTURE], 0);
 }
@@ -337,7 +360,12 @@ typedef enum {
 
 - (void)update
 {
-    flashlightPosition = GLKVector3Make(0.0, 0.0, 0.0);
+    if (toggleFlashlight.isOn) {
+        screenSizeComponent = GLKVector2Make([UIScreen mainScreen].bounds.size.width, [UIScreen mainScreen].bounds.size.height);
+    } else {
+        screenSizeComponent = GLKVector2Make(-1, -1);
+    }
+    //flashlightPosition = GLKVector3Make(0.0, 0.0, 0.0);
     //diffuseLightPosition = GLKVector3Make(_x, 1.0, _z);
     [self calculateMatrices];
     [self updateMovement];
@@ -355,35 +383,6 @@ typedef enum {
     GLKMatrix4 projectionMatrix = GLKMatrix4MakePerspective(GLKMathDegreesToRadians(65.0f), aspect, 0.1f, 100.0f);
     
     GLKMatrix4 modelViewMatrix;
-    
-    //  Player (Minimap Only)
-    modelViewMatrix = [self generateModelViewMatrix:-_x zPos:-_z xScale:0.25 zScale:0.25 isTopDown:true];
-    modelViewMatrix = GLKMatrix4RotateY(modelViewMatrix, GLKMathDegreesToRadians(_rotation + 90));
-    modelViewMatrix = GLKMatrix4Multiply(baseMapModelViewMatrix, modelViewMatrix);
-    _playerNormalMatrix = GLKMatrix3InvertAndTranspose(GLKMatrix4GetMatrix3(modelViewMatrix), NULL);
-    _playerModelProjectionMatrix = GLKMatrix4Multiply(projectionMatrix, modelViewMatrix);
-    
-    //  Rotating Cube Map
-    _rotateCubeRotationZ += 0.2;
-    _rotateCubeRotationX += 0.2;
-    modelViewMatrix = GLKMatrix4Identity;
-    modelViewMatrix = GLKMatrix4RotateY(modelViewMatrix, GLKMathDegreesToRadians(_rotation));
-    modelViewMatrix = GLKMatrix4Scale(modelViewMatrix, 0.25, 0.25, 0.25);
-    modelViewMatrix = GLKMatrix4Translate(modelViewMatrix, _x / 0.25, 0.0, _z / 0.25);
-    modelViewMatrix = GLKMatrix4RotateX(modelViewMatrix, _rotateCubeRotationX);
-    modelViewMatrix = GLKMatrix4RotateZ(modelViewMatrix, _rotateCubeRotationZ);
-    modelViewMatrix = GLKMatrix4Multiply(baseModelViewMatrix, modelViewMatrix);
-    _rotateCubeNormalMatrix = GLKMatrix3InvertAndTranspose(GLKMatrix4GetMatrix3(modelViewMatrix), NULL);
-    _rotateCubeModelProjectionMatrix = GLKMatrix4Multiply(projectionMatrix, modelViewMatrix);
-    //  Rotating Cube Minimap
-    modelViewMatrix = GLKMatrix4Identity;
-    modelViewMatrix = GLKMatrix4RotateX(modelViewMatrix, _rotateCubeRotationX);
-    modelViewMatrix = GLKMatrix4RotateZ(modelViewMatrix, _rotateCubeRotationZ);
-    modelViewMatrix = GLKMatrix4Scale(modelViewMatrix, 0.25, 0.25, 0.25);
-    modelViewMatrix = GLKMatrix4Translate(modelViewMatrix, 0, 0, 0);
-    modelViewMatrix = GLKMatrix4Multiply(baseMapModelViewMatrix, modelViewMatrix);
-    _rotateMapCubeNormalMatrix = GLKMatrix3InvertAndTranspose(GLKMatrix4GetMatrix3(modelViewMatrix), NULL);
-    _rotateMapCubeModelProjectionMatrix = GLKMatrix4Multiply(projectionMatrix, modelViewMatrix);
     
     [_mazeTiles removeAllObjects];
     for(int col = 0; col < _mazeWidth; col++) {
@@ -456,6 +455,43 @@ typedef enum {
             [_mazeTiles addObject:mazeTile];
         }
     }
+    
+    //  Player (Minimap Only)
+    modelViewMatrix = [self generateModelViewMatrix:-_x zPos:-_z xScale:0.25 zScale:0.25 isTopDown:true];
+    modelViewMatrix = GLKMatrix4RotateY(modelViewMatrix, GLKMathDegreesToRadians(_rotation + 90));
+    modelViewMatrix = GLKMatrix4Multiply(baseMapModelViewMatrix, modelViewMatrix);
+    _playerNormalMatrix = GLKMatrix3InvertAndTranspose(GLKMatrix4GetMatrix3(modelViewMatrix), NULL);
+    _playerModelProjectionMatrix = GLKMatrix4Multiply(projectionMatrix, modelViewMatrix);
+    
+    //  Rotating Cube Map
+    _rotateCubeRotationZ += 0.2;
+    _rotateCubeRotationX += 0.2;
+    modelViewMatrix = GLKMatrix4Identity;
+    modelViewMatrix = GLKMatrix4RotateY(modelViewMatrix, GLKMathDegreesToRadians(_rotation));
+    modelViewMatrix = GLKMatrix4Scale(modelViewMatrix, 0.25, 0.25, 0.25);
+    modelViewMatrix = GLKMatrix4Translate(modelViewMatrix, _x / 0.25, 0.0, _z / 0.25);
+    modelViewMatrix = GLKMatrix4RotateX(modelViewMatrix, _rotateCubeRotationX);
+    modelViewMatrix = GLKMatrix4RotateZ(modelViewMatrix, _rotateCubeRotationZ);
+    modelViewMatrix = GLKMatrix4Multiply(baseModelViewMatrix, modelViewMatrix);
+    _rotateCubeNormalMatrix = GLKMatrix3InvertAndTranspose(GLKMatrix4GetMatrix3(modelViewMatrix), NULL);
+    _rotateCubeModelProjectionMatrix = GLKMatrix4Multiply(projectionMatrix, modelViewMatrix);\
+    //  Rotating Cube Minimap
+    modelViewMatrix = GLKMatrix4Identity;
+    modelViewMatrix = GLKMatrix4RotateX(modelViewMatrix, _rotateCubeRotationX);
+    modelViewMatrix = GLKMatrix4RotateZ(modelViewMatrix, _rotateCubeRotationZ);
+    modelViewMatrix = GLKMatrix4Scale(modelViewMatrix, 0.25, 0.25, 0.25);
+    modelViewMatrix = GLKMatrix4Translate(modelViewMatrix, 0, 0, 0);
+    modelViewMatrix = GLKMatrix4Multiply(baseMapModelViewMatrix, modelViewMatrix);
+    _rotateMapCubeNormalMatrix = GLKMatrix3InvertAndTranspose(GLKMatrix4GetMatrix3(modelViewMatrix), NULL);
+    _rotateMapCubeModelProjectionMatrix = GLKMatrix4Multiply(projectionMatrix, modelViewMatrix);
+    
+    // Tanslucent Background
+    modelViewMatrix = GLKMatrix4Identity;
+    modelViewMatrix = GLKMatrix4Scale(modelViewMatrix, 50, 1, 50);
+    modelViewMatrix = GLKMatrix4Translate(modelViewMatrix, 0, -10, 0);
+    modelViewMatrix = GLKMatrix4Multiply(baseMapModelViewMatrix, modelViewMatrix);
+    _mapBackgroundNormal = GLKMatrix3InvertAndTranspose(GLKMatrix4GetMatrix3(modelViewMatrix), NULL);
+    _mapBackgroundProjection = GLKMatrix4Multiply(projectionMatrix, modelViewMatrix);
 }
 
 - (GLKMatrix4)generateModelViewMatrix:(float)xPos zPos:(float)zPos xScale:(float)xScale zScale:(float)zScale isTopDown:(bool)isTopDown
@@ -477,15 +513,21 @@ typedef enum {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glBindVertexArrayOES(_vertexArray);
     glUseProgram(_program);
-    [self setLighting:_dayNightToggle.isOn];
-    [self renderMaze];
     if (_consoleOn) {
+        ambientComponent = GLKVector4Make(0.05, 0.05, 0.05, 1.0);
+        [self renderMaze];
+        glClear(GL_DEPTH_BUFFER_BIT);
         [self setLighting:true];
+        screenSizeComponent = GLKVector2Make(-1.0, -1.0);
         [self renderMinimap];
+    } else {
+        [self setLighting:_dayNightToggle.isOn];
+        [self renderMaze];
     }
 }
 
 - (void)renderMaze {
+    glClearColor(0.5f, 0.5f, 0.5f, 0.2f);
     // Set up uniforms
     glUniformMatrix4fv(uniforms[UNIFORM_MODELVIEWPROJECTION_MATRIX], 1, 0, _modelViewProjectionMatrix.m);
     glUniformMatrix3fv(uniforms[UNIFORM_NORMAL_MATRIX], 1, 0, _normalMatrix.m);
@@ -497,12 +539,15 @@ typedef enum {
     glUniform1f(uniforms[UNIFORM_SHININESS], shininess);
     glUniform4fv(uniforms[UNIFORM_SPECULAR_COMPONENT], 1, specularComponent.v);
     glUniform4fv(uniforms[UNIFORM_AMBIENT_COMPONENT], 1, ambientComponent.v);
+    glUniform2fv(uniforms[UNIFORM_SCREENSIZE_COMPONENT], 1, screenSizeComponent.v);
     
     // Floor
     [self renderCube:_floorModelProjectionMatrix normal:_floorNormalMatrix texture:_textures->textureFloor];
     
-    // Cube
-    [self renderCube:_rotateCubeModelProjectionMatrix normal:_rotateCubeNormalMatrix texture:_textures->textureCrate];
+    if (!(_x == 0 && _z == 0)) {
+        // Cube
+        [self renderCube:_rotateCubeModelProjectionMatrix normal:_rotateCubeNormalMatrix texture:_textures->textureCrate];
+    }
     
     // Maze tiles
     for(MazeTile* mazeTile in _mazeTiles) {
@@ -529,15 +574,16 @@ typedef enum {
 - (void)renderMinimap {
     // Set up uniforms
     glUniformMatrix4fv(uniforms[UNIFORM_MODELVIEWPROJECTION_MATRIX], 1, 0, _modelViewProjectionMatrix.m);
-    //glUniformMatrix3fv(uniforms[UNIFORM_NORMAL_MATRIX], 1, 0, _normalMatrix.m);
-    //glUniformMatrix4fv(uniforms[UNIFORM_MODELVIEW_MATRIX], 1, 0, _modelViewMatrix.m);
-    /* set lighting parameters... */
     glUniform3fv(uniforms[UNIFORM_FLASHLIGHT_POSITION], 1, flashlightPosition.v);
     glUniform3fv(uniforms[UNIFORM_DIFFUSE_LIGHT_POSITION], 1, diffuseLightPosition.v);
     glUniform4fv(uniforms[UNIFORM_DIFFUSE_COMPONENT], 1, diffuseComponent.v);
     glUniform1f(uniforms[UNIFORM_SHININESS], shininess);
     glUniform4fv(uniforms[UNIFORM_SPECULAR_COMPONENT], 1, specularComponent.v);
     glUniform4fv(uniforms[UNIFORM_AMBIENT_COMPONENT], 1, ambientComponent.v);
+    glUniform2fv(uniforms[UNIFORM_SCREENSIZE_COMPONENT], 1, screenSizeComponent.v);
+    
+    //Background
+    //[self renderCube:_mapBackgroundProjection normal:_mapBackgroundNormal texture:_textures->textureBackground];
     
     //Player
     [self renderCube:_playerModelProjectionMatrix normal:_playerNormalMatrix texture:_textures->texturePlayer];
@@ -574,60 +620,102 @@ typedef enum {
 }
 
 - (void)updateMovement {
+    NSString *wallName;
+    switch (_direction) {
+        case NORTH:
+            wallName = @"North";
+            break;
+        case SOUTH:
+            wallName = @"South";
+        case EAST:
+            wallName = @"East";
+        case WEST:
+            wallName = @"West";
+        default:
+            break;
+    }
+    labelConsoleInfo.text = [NSString stringWithFormat:@"Position: (%.2f, %.2f)\nOrientation: %@ ", -_x, -_z, wallName];
+    float moveSpeed = 0.25;
+    float turnSpeed = 15;
+    if (_x < _xToBe) {
+        _x += moveSpeed;
+    } else if (_x > _xToBe) {
+        _x -= moveSpeed;
+    }
+    if (_z < _zToBe) {
+        _z += moveSpeed;
+    } else if (_z > _zToBe) {
+        _z -= moveSpeed;
+    }
     if (_rotation < _rotationToBe) {
-        _rotation += 15;
+        _rotation += turnSpeed;
     } else if (_rotation > _rotationToBe) {
-        _rotation -= 15;
+        _rotation -= turnSpeed;
     }
 }
 
 - (IBAction)swipeRight:(id)sender {
-    _rotationToBe += 90;
+    if (!_consoleOn)
+        _rotationToBe += 90;
 }
 
 - (IBAction)swipeLeft:(id)sender {
-    _rotationToBe -= 90;
+    if (!_consoleOn)
+        _rotationToBe -= 90;
 }
 
 - (IBAction)swipeUp:(id)sender {
-    NSLog(@"Up");
-    switch((int)_rotation % 360) {
-        case 0:
-            _z += 1;
-            break;
-        case 90:
-        case -270:
-            _x -= 1;
-            break;
-        case 180:
-        case -180:
-            _z -= 1;
-            break;
-        case 270:
-        case -90:
-            _x += 1;
-            break;
+    if (!_consoleOn) {
+        switch((int)_rotation % 360) {
+            case 0:
+                _zToBe += 1;
+                break;
+            case 90:
+            case -270:
+                _xToBe -= 1;
+                break;
+            case 180:
+            case -180:
+                _zToBe -= 1;
+                break;
+            case 270:
+            case -90:
+                _xToBe += 1;
+                break;
+        }
     }
 }
 
+- (IBAction)doubleTap:(id)sender {
+    _consoleOn = !_consoleOn;
+    labelDayNight.alpha = _consoleOn ? 0 : 1;
+    toggleDayNight.alpha = _consoleOn ? 0 : 1;
+    toggleDayNight.enabled = !_consoleOn;
+    labelConsoleInfo.alpha = _consoleOn ? 1 : 0;
+    labelFlashlight.alpha = _consoleOn ? 0 : 1;
+    toggleFlashlight.alpha = _consoleOn ? 0 : 1;
+    toggleFlashlight.enabled = !_consoleOn;
+}
+
 - (IBAction)swipeDown:(id)sender {
-    NSLog(@"Down");
-    switch((int)_rotation % 360) {
-        case 0:
-            _z -= 1;
-            break;
-        case 90:
-        case -270:
-            _x += 1;
-            break;
-        case 180:
-        case -180:
-            _z += 1;
-            break;
-        case 270:
-        case -90:
-            _x -= 1;
-            break;
+    if (!_consoleOn){
+        switch((int)_rotation % 360) {
+            case 0:
+                _zToBe -= 1;
+                break;
+            case 90:
+            case -270:
+                _xToBe += 1;
+                break;
+            case 180:
+            case -180:
+                _zToBe += 1;
+                break;
+            case 270:
+            case -90:
+                _xToBe -= 1;
+                break;
+        }
     }
 }
 
@@ -650,6 +738,15 @@ typedef enum {
             break;
     }
     return texture;
+}
+
+- (IBAction)doubleTapResetMaze:(id)sender {
+    _z = 1;
+    _x = 0;
+    _rotation = 180;
+    _xToBe = _x;
+    _zToBe = _z;
+    _rotationToBe = 180;
 }
 
 - (int)getWallCount:(MazeTile*)mazeTile direction:(Direction)direction {

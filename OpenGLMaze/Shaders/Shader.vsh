@@ -15,6 +15,7 @@
  varying vec3 eyeNormal;
  varying vec4 eyePos;
  varying vec2 texCoordOut;
+
  
  uniform mat4 modelViewProjectionMatrix;
  uniform mat4 modelViewMatrix;

@@ -13,8 +13,6 @@
 ////////////////////////////////////////////////////////////////////////////
 
 
-/*
-#include "stdafx.h"
 #include <stdlib.h>
 #include <time.h>
 #include "maze.h"
@@ -48,12 +46,13 @@ Maze::~Maze()
 
 void Maze::Create()
 {
-	maze[0][0].northWallPresent = false;			// entrance
+    startRow = 0;
+    startCol = 0;
+	maze[startCol][startRow].northWallPresent = false;			// entrance
 	maze[rows-1][cols-1].southWallPresent = false;	// exit
 	srand((unsigned int)time(NULL));
 	int entrySet = mazeSet->Find(0);
 	int exitSet = mazeSet->Find(((rows*cols)-1));
-
 	while (entrySet != exitSet) {
 
 		// Pick a random wall to knock down
@@ -127,4 +126,3 @@ MazeCell Maze::GetCell(int r, int c)
 	return maze[r][c];
 }
  
- */

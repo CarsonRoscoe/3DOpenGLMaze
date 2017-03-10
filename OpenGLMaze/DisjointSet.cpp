@@ -10,8 +10,6 @@
 ////////////////////////////////////////////////////////////////////////////
 
 
-/*
-#include "stdafx.h"
 #include "DisjointSet.h"
 
 DisjointSet::DisjointSet(int setSize)
@@ -41,4 +39,3 @@ int DisjointSet::Find(int x)
 	else
 		return Find(setArray[x]);
 }
-*/

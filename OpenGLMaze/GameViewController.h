@@ -8,6 +8,7 @@
 
 #import <UIKit/UIKit.h>
 #import <GLKit/GLKit.h>
+#include "mazeMix.h"
 
 @interface GameViewController : GLKViewController
 

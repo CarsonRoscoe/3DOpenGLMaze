@@ -24,6 +24,10 @@
 		E99959721E6CC35400DDD4BE /* Texture3.png in Resources */ = {isa = PBXBuildFile; fileRef = E999596F1E6CC35400DDD4BE /* Texture3.png */; };
 		E99959731E6CC35400DDD4BE /* Texture2.png in Resources */ = {isa = PBXBuildFile; fileRef = E99959701E6CC35400DDD4BE /* Texture2.png */; };
 		E99959751E6D465800DDD4BE /* Floor.png in Resources */ = {isa = PBXBuildFile; fileRef = E99959741E6D465800DDD4BE /* Floor.png */; };
+		E9BDC1111E726DE300A387E8 /* MinimapWall.png in Resources */ = {isa = PBXBuildFile; fileRef = E9BDC10F1E726DE300A387E8 /* MinimapWall.png */; };
+		E9BDC1121E726DE300A387E8 /* Player.png in Resources */ = {isa = PBXBuildFile; fileRef = E9BDC1101E726DE300A387E8 /* Player.png */; };
+		E9EBF7EA1E70944D00F41371 /* mazeMix.mm in Sources */ = {isa = PBXBuildFile; fileRef = E9EBF7E91E70944D00F41371 /* mazeMix.mm */; };
+		E9EBF7EF1E70A1FD00F41371 /* MazeTile.m in Sources */ = {isa = PBXBuildFile; fileRef = E9EBF7EE1E70A1FD00F41371 /* MazeTile.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -71,6 +75,12 @@
 		E999596F1E6CC35400DDD4BE /* Texture3.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Texture3.png; sourceTree = "<group>"; };
 		E99959701E6CC35400DDD4BE /* Texture2.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Texture2.png; sourceTree = "<group>"; };
 		E99959741E6D465800DDD4BE /* Floor.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Floor.png; sourceTree = "<group>"; };
+		E9BDC10F1E726DE300A387E8 /* MinimapWall.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = MinimapWall.png; sourceTree = "<group>"; };
+		E9BDC1101E726DE300A387E8 /* Player.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Player.png; sourceTree = "<group>"; };
+		E9EBF7E81E70944D00F41371 /* mazeMix.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = mazeMix.h; sourceTree = "<group>"; };
+		E9EBF7E91E70944D00F41371 /* mazeMix.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = mazeMix.mm; sourceTree = "<group>"; };
+		E9EBF7EB1E70994B00F41371 /* MazeTile.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MazeTile.h; sourceTree = "<group>"; };
+		E9EBF7EE1E70A1FD00F41371 /* MazeTile.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MazeTile.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -122,10 +132,14 @@
 			isa = PBXGroup;
 			children = (
 				E99959741E6D465800DDD4BE /* Floor.png */,
+				E9BDC10F1E726DE300A387E8 /* MinimapWall.png */,
+				E9BDC1101E726DE300A387E8 /* Player.png */,
 				E999596E1E6CC35400DDD4BE /* Texture4.png */,
 				E999596F1E6CC35400DDD4BE /* Texture3.png */,
 				E99959701E6CC35400DDD4BE /* Texture2.png */,
 				E986DBD91E6B607A00964F7C /* Texture1.png */,
+				E9EBF7E81E70944D00F41371 /* mazeMix.h */,
+				E9EBF7E91E70944D00F41371 /* mazeMix.mm */,
 				E908C9711E6A182000EC330A /* DisjointSet.cpp */,
 				E908C9721E6A182000EC330A /* DisjointSet.h */,
 				E908C9731E6A182000EC330A /* maze.cpp */,
@@ -141,6 +155,8 @@
 				E95AE8961E690FAA00D89929 /* LaunchScreen.storyboard */,
 				E95AE8991E690FAA00D89929 /* Info.plist */,
 				E95AE8841E690FAA00D89929 /* Supporting Files */,
+				E9EBF7EB1E70994B00F41371 /* MazeTile.h */,
+				E9EBF7EE1E70A1FD00F41371 /* MazeTile.m */,
 			);
 			path = OpenGLMaze;
 			sourceTree = "<group>";
@@ -280,7 +296,9 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E9BDC1111E726DE300A387E8 /* MinimapWall.png in Resources */,
 				E99959751E6D465800DDD4BE /* Floor.png in Resources */,
+				E9BDC1121E726DE300A387E8 /* Player.png in Resources */,
 				E95AE8931E690FAA00D89929 /* Main.storyboard in Resources */,
 				E99959711E6CC35400DDD4BE /* Texture4.png in Resources */,
 				E95AE88D1E690FAA00D89929 /* Shader.vsh in Resources */,
@@ -314,8 +332,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E9EBF7EF1E70A1FD00F41371 /* MazeTile.m in Sources */,
 				E908C9751E6A182000EC330A /* DisjointSet.cpp in Sources */,
 				E95AE8891E690FAA00D89929 /* AppDelegate.m in Sources */,
+				E9EBF7EA1E70944D00F41371 /* mazeMix.mm in Sources */,
 				E95AE8901E690FAA00D89929 /* GameViewController.m in Sources */,
 				E908C9761E6A182000EC330A /* maze.cpp in Sources */,
 				E95AE8861E690FAA00D89929 /* main.m in Sources */,
@@ -469,6 +489,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				DEVELOPMENT_TEAM = 7RKQS9TN9B;
 				INFOPLIST_FILE = OpenGLMaze/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 9.3;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.cedj.OpenGLMaze;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -481,6 +502,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				DEVELOPMENT_TEAM = 7RKQS9TN9B;
 				INFOPLIST_FILE = OpenGLMaze/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 9.3;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.cedj.OpenGLMaze;
 				PRODUCT_NAME = "$(TARGET_NAME)";

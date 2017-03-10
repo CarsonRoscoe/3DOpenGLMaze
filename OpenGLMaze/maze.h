@@ -13,7 +13,7 @@
 ////////////////////////////////////////////////////////////////////////////
 
 
-/*
+
 #ifndef __MAZE_H__
 #define __MAZE_H__
 
@@ -34,7 +34,7 @@ class Maze
 		Maze(int rows = 4, int cols = 4);	// default size is 4x4 maze
 		~Maze();
 		MazeCell GetCell(int r, int c);
-
+        int startRow, startCol;
 		void Create();	// creates a random maze
 
 	private:
@@ -44,4 +44,4 @@ class Maze
 };
 
 #endif
-*/
+

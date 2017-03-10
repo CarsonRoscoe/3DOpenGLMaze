@@ -26,6 +26,7 @@
 		E99959751E6D465800DDD4BE /* Floor.png in Resources */ = {isa = PBXBuildFile; fileRef = E99959741E6D465800DDD4BE /* Floor.png */; };
 		E9BDC1111E726DE300A387E8 /* MinimapWall.png in Resources */ = {isa = PBXBuildFile; fileRef = E9BDC10F1E726DE300A387E8 /* MinimapWall.png */; };
 		E9BDC1121E726DE300A387E8 /* Player.png in Resources */ = {isa = PBXBuildFile; fileRef = E9BDC1101E726DE300A387E8 /* Player.png */; };
+		E9BDC15F1E733A4000A387E8 /* crate.jpg in Resources */ = {isa = PBXBuildFile; fileRef = E9BDC15E1E733A4000A387E8 /* crate.jpg */; };
 		E9EBF7EA1E70944D00F41371 /* mazeMix.mm in Sources */ = {isa = PBXBuildFile; fileRef = E9EBF7E91E70944D00F41371 /* mazeMix.mm */; };
 		E9EBF7EF1E70A1FD00F41371 /* MazeTile.m in Sources */ = {isa = PBXBuildFile; fileRef = E9EBF7EE1E70A1FD00F41371 /* MazeTile.m */; };
 /* End PBXBuildFile section */
@@ -77,6 +78,7 @@
 		E99959741E6D465800DDD4BE /* Floor.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Floor.png; sourceTree = "<group>"; };
 		E9BDC10F1E726DE300A387E8 /* MinimapWall.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = MinimapWall.png; sourceTree = "<group>"; };
 		E9BDC1101E726DE300A387E8 /* Player.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Player.png; sourceTree = "<group>"; };
+		E9BDC15E1E733A4000A387E8 /* crate.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = crate.jpg; sourceTree = "<group>"; };
 		E9EBF7E81E70944D00F41371 /* mazeMix.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = mazeMix.h; sourceTree = "<group>"; };
 		E9EBF7E91E70944D00F41371 /* mazeMix.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = mazeMix.mm; sourceTree = "<group>"; };
 		E9EBF7EB1E70994B00F41371 /* MazeTile.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MazeTile.h; sourceTree = "<group>"; };
@@ -131,6 +133,7 @@
 		E95AE8831E690FAA00D89929 /* OpenGLMaze */ = {
 			isa = PBXGroup;
 			children = (
+				E9BDC15E1E733A4000A387E8 /* crate.jpg */,
 				E99959741E6D465800DDD4BE /* Floor.png */,
 				E9BDC10F1E726DE300A387E8 /* MinimapWall.png */,
 				E9BDC1101E726DE300A387E8 /* Player.png */,
@@ -305,6 +308,7 @@
 				E99959721E6CC35400DDD4BE /* Texture3.png in Resources */,
 				E95AE8951E690FAA00D89929 /* Assets.xcassets in Resources */,
 				E95AE8981E690FAA00D89929 /* LaunchScreen.storyboard in Resources */,
+				E9BDC15F1E733A4000A387E8 /* crate.jpg in Resources */,
 				E986DBDA1E6B607A00964F7C /* Texture1.png in Resources */,
 				E99959731E6CC35400DDD4BE /* Texture2.png in Resources */,
 				E95AE88B1E690FAA00D89929 /* Shader.fsh in Resources */,

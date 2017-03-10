@@ -7,12 +7,10 @@
 
 /*
  TODO:
- - Fix clipping placement of walls
- - Add floating rotating cube
  - Add fog shading
- - Fix rotation-glitchy visual bug
  - Flashlight
  - Console/Map
+ - Console Map guy arrow wrong direction half the time
  */
 
 #import "GameViewController.h"
@@ -52,6 +50,7 @@ typedef enum {
     GLuint textureFloor;
     GLuint texturePlayer;
     GLuint textureMiniMap;
+    GLuint textureCrate;
 } @end
 @implementation Textures @end
 
@@ -74,7 +73,6 @@ typedef enum {
     
     // Transformation parameters
     float _rotation;
-    float xRot, yRot;
     CGPoint dragStart;
     
     // Shape vertices, etc. and textures
@@ -107,6 +105,17 @@ typedef enum {
     bool _consoleOn;
     GLKMatrix3 _playerNormalMatrix;
     GLKMatrix4 _playerModelProjectionMatrix;
+    
+    // Rotating Cube
+    float _rotateCubeX;
+    float _rotateCubeZ;
+    float _rotateCubeRotationX;
+    float _rotateCubeRotationY;
+    float _rotateCubeRotationZ;
+    GLKMatrix3 _rotateCubeNormalMatrix;
+    GLKMatrix4 _rotateCubeModelProjectionMatrix;
+    GLKMatrix3 _rotateMapCubeNormalMatrix;
+    GLKMatrix4 _rotateMapCubeModelProjectionMatrix;
 }
 
 @property (strong, nonatomic) EAGLContext *context;
@@ -120,10 +129,10 @@ typedef enum {
 - (BOOL)linkProgram:(GLuint)prog;
 - (BOOL)validateProgram:(GLuint)prog;
 - (void)setLighting:(bool)isDay;
-- (void)takeStepForward;
-- (void)takeStepBackward;
-- (void)turnLeft;
-- (void)turnRight;
+- (IBAction)swipeRight:(id)sender;
+- (IBAction)swipeLeft:(id)sender;
+- (IBAction)swipeUp:(id)sender;
+- (IBAction)swipeDown:(id)sender;
 - (void)renderCube:(GLKMatrix4)projection normal:(GLKMatrix3)normal texture:(GLuint)texture;
 - (GLKMatrix4)generateModelViewMatrix:(float)xPos zPos:(float)zPos xScale:(float)xScale zScale:(float)zScale isTopDown:(bool)isTopDown;
 - (void)updateMovement;
@@ -142,8 +151,10 @@ typedef enum {
     [_mazeManager createMaze];
     _direction = NORTH;
     _rotation = 0;
-    _z = 3;
+    _z = 1;
     _x = 0;
+    _rotateCubeX = 0;
+    _rotateCubeZ = 0;
     _xToBe = _x;
     _zToBe = _z;
     _rotationToBe = _rotation;
@@ -154,11 +165,6 @@ typedef enum {
     singleTap.numberOfTapsRequired = 1;
     [self.view addGestureRecognizer:singleTap];
     
-    UIPanGestureRecognizer *rotObj = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(doRotate:)];
-    rotObj.minimumNumberOfTouches = 1;
-    rotObj.maximumNumberOfTouches = 1;
-    [self.view addGestureRecognizer:rotObj];
-    
     self.context = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2];
     
     if (!self.context) {
@@ -168,9 +174,7 @@ typedef enum {
     GLKView *view = (GLKView *)self.view;
     view.context = self.context;
     view.drawableDepthFormat = GLKViewDrawableDepthFormat24;
-    
-    // Set up UI parameters
-    xRot = yRot = 30 * M_PI / 180;
+
     
     // Set up GL
     [self setupGL];
@@ -276,6 +280,7 @@ typedef enum {
     _textures->textureFloor = [self setupTexture:@"Floor.png"];
     _textures->texturePlayer = [self setupTexture:@"Player.png"];
     _textures->textureMiniMap = [self setupTexture:@"MinimapWall.png"];
+    _textures->textureCrate = [self setupTexture:@"crate.jpg"];
     glActiveTexture(GL_TEXTURE0);
     glUniform1i(uniforms[UNIFORM_TEXTURE], 0);
 }
@@ -328,58 +333,57 @@ typedef enum {
     dragStart = [recognizer locationInView:self.view];
 }
 
-- (IBAction)doRotate:(UIPanGestureRecognizer *)recognizer
-{
-    if (recognizer.state == UIGestureRecognizerStateBegan ) {
-        dragStart = [recognizer locationInView:self.view];
-    }
-    if (recognizer.state != UIGestureRecognizerStateEnded) {
-        CGPoint newPt = [recognizer locationInView:self.view];
-        float yDrag = newPt.y - dragStart.y;
-        float xDrag = newPt.x - dragStart.x;
-        if (xDrag > 60) {
-            [self rotateRight];
-            dragStart = [recognizer locationInView:self.view];
-        }
-        if (xDrag < -60) {
-            [self rotateLeft];
-            dragStart = [recognizer locationInView:self.view];
-        }
-        if (yDrag > 60) {
-            [self takeStepBackward];
-            dragStart = [recognizer locationInView:self.view];
-        }
-        if (yDrag < -60) {
-            [self takeStepForward];
-            dragStart = [recognizer locationInView:self.view];
-        }
-    }
-}
-
 #pragma mark - GLKView and GLKViewController delegate methods
 
 - (void)update
 {
+    flashlightPosition = GLKVector3Make(0.0, 0.0, 0.0);
+    //diffuseLightPosition = GLKVector3Make(_x, 1.0, _z);
     [self calculateMatrices];
     [self updateMovement];
-    [self setLighting:_dayNightToggle.isOn];
 }
 
 - (void)calculateMatrices {
     // Set up base model view matrix (place camera)
-    GLKMatrix4 baseModelViewMatrix = GLKMatrix4MakeTranslation(0.0, 0.0f, 0.0);
+    GLKMatrix4 baseModelViewMatrix = GLKMatrix4MakeTranslation(0.0, 0.0, 0.0);
     GLKMatrix4 baseMapModelViewMatrix = GLKMatrix4MakeTranslation(-_mazeHeight/2.0, _mazeWidth/2.0, -20.0f);
     baseMapModelViewMatrix = GLKMatrix4RotateX(baseMapModelViewMatrix, M_PI / 2);
     //baseModelViewMatrix = GLKMatrix4RotateY(baseModelViewMatrix, _rotation);
     
-    // Calculate projection matrix
+    //  Calculate projection matrix
     float aspect = fabsf(self.view.bounds.size.width / self.view.bounds.size.height);
     GLKMatrix4 projectionMatrix = GLKMatrix4MakePerspective(GLKMathDegreesToRadians(65.0f), aspect, 0.1f, 100.0f);
     
-    GLKMatrix4 modelViewMatrix = [self generateModelViewMatrix:_x * 2 zPos:_z * 2 xScale:0.5 zScale:0.5 isTopDown:true];
+    GLKMatrix4 modelViewMatrix;
+    
+    //  Player (Minimap Only)
+    modelViewMatrix = [self generateModelViewMatrix:-_x zPos:-_z xScale:0.25 zScale:0.25 isTopDown:true];
+    modelViewMatrix = GLKMatrix4RotateY(modelViewMatrix, GLKMathDegreesToRadians(_rotation + 90));
     modelViewMatrix = GLKMatrix4Multiply(baseMapModelViewMatrix, modelViewMatrix);
     _playerNormalMatrix = GLKMatrix3InvertAndTranspose(GLKMatrix4GetMatrix3(modelViewMatrix), NULL);
     _playerModelProjectionMatrix = GLKMatrix4Multiply(projectionMatrix, modelViewMatrix);
+    
+    //  Rotating Cube Map
+    _rotateCubeRotationZ += 0.2;
+    _rotateCubeRotationX += 0.2;
+    modelViewMatrix = GLKMatrix4Identity;
+    modelViewMatrix = GLKMatrix4RotateY(modelViewMatrix, GLKMathDegreesToRadians(_rotation));
+    modelViewMatrix = GLKMatrix4Scale(modelViewMatrix, 0.25, 0.25, 0.25);
+    modelViewMatrix = GLKMatrix4Translate(modelViewMatrix, _x / 0.25, 0.0, _z / 0.25);
+    modelViewMatrix = GLKMatrix4RotateX(modelViewMatrix, _rotateCubeRotationX);
+    modelViewMatrix = GLKMatrix4RotateZ(modelViewMatrix, _rotateCubeRotationZ);
+    modelViewMatrix = GLKMatrix4Multiply(baseModelViewMatrix, modelViewMatrix);
+    _rotateCubeNormalMatrix = GLKMatrix3InvertAndTranspose(GLKMatrix4GetMatrix3(modelViewMatrix), NULL);
+    _rotateCubeModelProjectionMatrix = GLKMatrix4Multiply(projectionMatrix, modelViewMatrix);
+    //  Rotating Cube Minimap
+    modelViewMatrix = GLKMatrix4Identity;
+    modelViewMatrix = GLKMatrix4RotateX(modelViewMatrix, _rotateCubeRotationX);
+    modelViewMatrix = GLKMatrix4RotateZ(modelViewMatrix, _rotateCubeRotationZ);
+    modelViewMatrix = GLKMatrix4Scale(modelViewMatrix, 0.25, 0.25, 0.25);
+    modelViewMatrix = GLKMatrix4Translate(modelViewMatrix, 0, 0, 0);
+    modelViewMatrix = GLKMatrix4Multiply(baseMapModelViewMatrix, modelViewMatrix);
+    _rotateMapCubeNormalMatrix = GLKMatrix3InvertAndTranspose(GLKMatrix4GetMatrix3(modelViewMatrix), NULL);
+    _rotateMapCubeModelProjectionMatrix = GLKMatrix4Multiply(projectionMatrix, modelViewMatrix);
     
     [_mazeTiles removeAllObjects];
     for(int col = 0; col < _mazeWidth; col++) {
@@ -444,7 +448,7 @@ typedef enum {
             GLKMatrix4 modelViewMatrix = GLKMatrix4Identity;
             modelViewMatrix = GLKMatrix4RotateY(modelViewMatrix, GLKMathDegreesToRadians(_rotation));
             modelViewMatrix = GLKMatrix4Scale(modelViewMatrix, 1, 0.1, 1);
-            modelViewMatrix = GLKMatrix4Translate(modelViewMatrix, col, -10.0, row);
+            modelViewMatrix = GLKMatrix4Translate(modelViewMatrix, col + _x, -8.0, row + _z);
             modelViewMatrix = GLKMatrix4Multiply(baseModelViewMatrix, modelViewMatrix);
             mazeTile->floorNormalMatrix = GLKMatrix3InvertAndTranspose(GLKMatrix4GetMatrix3(modelViewMatrix), NULL);
             mazeTile->floorModelProjectionMatrix = GLKMatrix4Multiply(projectionMatrix, modelViewMatrix);
@@ -459,9 +463,12 @@ typedef enum {
     GLKMatrix4 modelViewMatrix = GLKMatrix4Identity;
     if(!isTopDown) {
         modelViewMatrix = GLKMatrix4RotateY(modelViewMatrix, GLKMathDegreesToRadians(_rotation));
+        modelViewMatrix = GLKMatrix4Scale(modelViewMatrix, xScale, 1, zScale);
+        return GLKMatrix4Translate(modelViewMatrix, (xPos + _x) * 1/xScale, 0.0, (zPos + _z) * 1/zScale);
+    } else {
+        modelViewMatrix = GLKMatrix4Scale(modelViewMatrix, xScale, 1, zScale);
+        return GLKMatrix4Translate(modelViewMatrix, (xPos) * 1/xScale, 0.0, (zPos) * 1/zScale);
     }
-    modelViewMatrix = GLKMatrix4Scale(modelViewMatrix, xScale, 1, zScale);
-    return GLKMatrix4Translate(modelViewMatrix, (xPos + _x) * 1/xScale, 0.0, (zPos + _z) * 1/zScale);
 }
 
 - (void)glkView:(GLKView *)view drawInRect:(CGRect)rect
@@ -470,12 +477,12 @@ typedef enum {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glBindVertexArrayOES(_vertexArray);
     glUseProgram(_program);
-    
+    [self setLighting:_dayNightToggle.isOn];
     [self renderMaze];
     if (_consoleOn) {
+        [self setLighting:true];
         [self renderMinimap];
     }
-
 }
 
 - (void)renderMaze {
@@ -493,6 +500,9 @@ typedef enum {
     
     // Floor
     [self renderCube:_floorModelProjectionMatrix normal:_floorNormalMatrix texture:_textures->textureFloor];
+    
+    // Cube
+    [self renderCube:_rotateCubeModelProjectionMatrix normal:_rotateCubeNormalMatrix texture:_textures->textureCrate];
     
     // Maze tiles
     for(MazeTile* mazeTile in _mazeTiles) {
@@ -532,6 +542,9 @@ typedef enum {
     //Player
     [self renderCube:_playerModelProjectionMatrix normal:_playerNormalMatrix texture:_textures->texturePlayer];
     
+    // Cube
+    [self renderCube:_rotateMapCubeModelProjectionMatrix normal:_rotateMapCubeNormalMatrix texture:_textures->textureCrate];
+    
     for(MazeTile* mazeTile in _mazeTiles) {
         if (mazeTile->north) {
             GLuint texture = [self getTexture:[self getWallCount:mazeTile direction:NORTH]];
@@ -566,39 +579,18 @@ typedef enum {
     } else if (_rotation > _rotationToBe) {
         _rotation -= 15;
     }
-    /*float moveSpeed = 0.05;
-    float rotationSpeed = 90 / 5;
-    if (_z < _zToBe) {
-        _z += moveSpeed;
-    } else if (_z > _zToBe) {
-        _z -= moveSpeed;
-    } else {
-        _canMove = true;
-        _z = _zToBe;
-    }
-    if (_x < _xToBe) {
-        _x += moveSpeed;
-    } else if (_x > _xToBe) {
-        _x -= moveSpeed;
-    } else {
-        _canMove = true;
-        _x = _xToBe;
-    }
-    if (fabsf(_rotation - _rotationToBe) < 5) {
-        _rotation = _rotationToBe;
-        _canMove = true;
-    } else {
-        if (_rotation < _rotationToBe) {
-            _rotation += rotationSpeed;
-        } else if (_rotation > _rotationToBe) {
-            _rotation -= rotationSpeed;
-        } else {
-            NSLog(@"updateMovement->Unreachable Code");
-        }
-    }*/
 }
 
-- (void)takeStepForward {
+- (IBAction)swipeRight:(id)sender {
+    _rotationToBe += 90;
+}
+
+- (IBAction)swipeLeft:(id)sender {
+    _rotationToBe -= 90;
+}
+
+- (IBAction)swipeUp:(id)sender {
+    NSLog(@"Up");
     switch((int)_rotation % 360) {
         case 0:
             _z += 1;
@@ -616,26 +608,10 @@ typedef enum {
             _x += 1;
             break;
     }
-    /*_canMove = false;
-    switch (_direction) {
-        case NORTH:
-            _zToBe = _z + 0.5;
-            break;
-        case SOUTH:
-            _zToBe = _z - 0.5;
-            break;
-        case EAST:
-            _xToBe = _x - 0.5;
-            break;
-        case WEST:
-            _xToBe = _x + 0.5;
-            break;
-        default:
-            break;
-    }*/
 }
 
-- (void)takeStepBackward {
+- (IBAction)swipeDown:(id)sender {
+    NSLog(@"Down");
     switch((int)_rotation % 360) {
         case 0:
             _z -= 1;
@@ -653,23 +629,6 @@ typedef enum {
             _x -= 1;
             break;
     }
-    /*_canMove = false;
-    switch (_direction) {
-        case NORTH:
-            _zToBe = _z - 0.5;
-            break;
-        case SOUTH:
-            _zToBe = _z + 0.5;
-            break;
-        case EAST:
-            _xToBe = _x + 0.5;
-            break;
-        case WEST:
-            _xToBe = _x - 0.5;
-            break;
-        default:
-            break;
-    }*/
 }
 
 - (GLuint) getTexture:(int)adjacentWallCount {
@@ -732,16 +691,6 @@ typedef enum {
             break;
     }
     return result;
-}
-
-- (void)rotateLeft {
-    _canMove = false;
-    _rotationToBe -= 90;
-}
-
-- (void)rotateRight {
-    _canMove = false;
-    _rotationToBe -= 90;
 }
 
 #pragma mark -  OpenGL ES 2 shader compilation

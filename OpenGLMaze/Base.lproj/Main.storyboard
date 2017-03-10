@@ -27,12 +27,39 @@
                             </switch>
                         </subviews>
                         <color key="backgroundColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                        <gestureRecognizers/>
+                        <connections>
+                            <outletCollection property="gestureRecognizers" destination="hLH-01-xLk" appends="YES" id="itV-ej-WrC"/>
+                            <outletCollection property="gestureRecognizers" destination="0ap-2d-MJd" appends="YES" id="j3X-YH-qqp"/>
+                            <outletCollection property="gestureRecognizers" destination="KHU-Oj-BFr" appends="YES" id="mSM-V3-pNN"/>
+                            <outletCollection property="gestureRecognizers" destination="lml-PN-BmC" appends="YES" id="Dfn-Yj-ISK"/>
+                        </connections>
                     </view>
                     <connections>
                         <outlet property="dayNightToggle" destination="6Qe-Xv-6jy" id="PPm-QM-4lS"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="SZV-WD-TEh" sceneMemberID="firstResponder"/>
+                <swipeGestureRecognizer direction="right" id="hLH-01-xLk" userLabel="SwipeRight">
+                    <connections>
+                        <action selector="swipeRight:" destination="BV1-FR-VrT" id="lB5-Nr-ybf"/>
+                    </connections>
+                </swipeGestureRecognizer>
+                <swipeGestureRecognizer direction="left" id="0ap-2d-MJd" userLabel="SwipeLeft">
+                    <connections>
+                        <action selector="swipeLeft:" destination="BV1-FR-VrT" id="uS6-yk-Ytb"/>
+                    </connections>
+                </swipeGestureRecognizer>
+                <swipeGestureRecognizer direction="up" id="KHU-Oj-BFr" userLabel="SwipeUp">
+                    <connections>
+                        <action selector="swipeUp:" destination="BV1-FR-VrT" id="w6V-aj-fgP"/>
+                    </connections>
+                </swipeGestureRecognizer>
+                <swipeGestureRecognizer direction="down" id="lml-PN-BmC" userLabel="SwipeDown">
+                    <connections>
+                        <action selector="swipeDown:" destination="BV1-FR-VrT" id="05k-t2-1fU"/>
+                    </connections>
+                </swipeGestureRecognizer>
             </objects>
         </scene>
     </scenes>

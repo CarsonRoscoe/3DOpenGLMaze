@@ -55,18 +55,28 @@ void main()
     }
     
     //Fog logic
-    /*vec3 pixelPosition = vec3(eyePos.x, eyePos.y, eyePos.z);
-    float distanceToPlayer = distance(flashlightPosition, pixelPosition);
-    vec3 fogColor = vec3(0.5, 0.5, 0.5);
-    if (distanceToPlayer > 1.0) {
+    if (flashlightPosition.x == -1.0) {
+        vec3 pixelPosition = vec3(eyePos.x, eyePos.y, eyePos.z);
+        float distanceToPlayer = distance(flashlightPosition, pixelPosition);
+        vec4 fogColor = vec4(0.4, 0.4, 0.4, 1.0);
+        float fogStrength = 1.0;
+        if (distanceToPlayer < 1.0) {
+            fogStrength = distanceToPlayer;
+        }
         
+        if (lightValue > 1.0) {
+            fogStrength -= distanceToPlayer * 0.04;
+        }
+        if (fogStrength < 0.0) {
+            fogStrength = 0.0;
+        }
+        
+        //add ambient and specular components here as in:
+        gl_FragColor = ((ambient + diffuse + specular) * texture2D(texture, texCoordOut)) * lightValue * (1.0 - fogStrength) + fogColor * fogStrength;
+        gl_FragColor.a = 1.0;
     } else {
-        
-    }*/
-    
-    //add ambient and specular components here as in:
-    gl_FragColor = ((ambient + diffuse + specular) * texture2D(texture, texCoordOut)) * lightValue;
-    
-    gl_FragColor.a = 1.0;
+        gl_FragColor = ((ambient + diffuse + specular) * texture2D(texture, texCoordOut)) * lightValue;
+        gl_FragColor.a = 1.0;
+    }
 }
  

@@ -130,6 +130,8 @@ typedef enum {
     __weak IBOutlet UILabel *labelConsoleInfo;
     __weak IBOutlet UILabel *labelFlashlight;
     __weak IBOutlet UISwitch *toggleFlashlight;
+    __weak IBOutlet UILabel *labelFog;
+    __weak IBOutlet UISwitch *toggleFog;
     
 }
 
@@ -181,6 +183,7 @@ typedef enum {
     toggleDayNight.alpha = 1.0;
     toggleDayNight.enabled = true;
     labelConsoleInfo.alpha = 0.0;
+    toggleFog.on = false;
     // Set up iOS gesture recognizers
     UITapGestureRecognizer *singleTap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(doSingleTap:)];
     singleTap.numberOfTapsRequired = 1;
@@ -365,7 +368,11 @@ typedef enum {
     } else {
         screenSizeComponent = GLKVector2Make(-1, -1);
     }
-    //flashlightPosition = GLKVector3Make(0.0, 0.0, 0.0);
+    if (toggleFog.isOn) {
+        flashlightPosition = GLKVector3Make(-1.0, 0.0, 1.0);
+    } else {
+        flashlightPosition = GLKVector3Make(0.0, 0.0, 1.0);
+    }
     //diffuseLightPosition = GLKVector3Make(_x, 1.0, _z);
     [self calculateMatrices];
     [self updateMovement];
@@ -670,16 +677,16 @@ typedef enum {
             case 0:
                 _zToBe += 1;
                 break;
-            case 90:
             case -270:
+            case 90:
                 _xToBe -= 1;
                 break;
-            case 180:
             case -180:
+            case 180:
                 _zToBe -= 1;
                 break;
-            case 270:
             case -90:
+            case 270:
                 _xToBe += 1;
                 break;
         }
@@ -695,6 +702,9 @@ typedef enum {
     labelFlashlight.alpha = _consoleOn ? 0 : 1;
     toggleFlashlight.alpha = _consoleOn ? 0 : 1;
     toggleFlashlight.enabled = !_consoleOn;
+    labelFog.alpha = _consoleOn ? 0 : 1;
+    toggleFog.alpha = _consoleOn ? 0 : 1;
+    toggleFog.enabled = !_consoleOn;
 }
 
 - (IBAction)swipeDown:(id)sender {
@@ -703,16 +713,16 @@ typedef enum {
             case 0:
                 _zToBe -= 1;
                 break;
-            case 90:
             case -270:
+            case 90:
                 _xToBe += 1;
                 break;
-            case 180:
             case -180:
+            case 180:
                 _zToBe += 1;
                 break;
-            case 270:
             case -90:
+            case 270:
                 _xToBe -= 1;
                 break;
         }
